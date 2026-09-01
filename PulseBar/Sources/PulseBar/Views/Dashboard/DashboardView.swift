@@ -39,7 +39,7 @@ struct DashboardView: View {
 
       Spacer()
 
-      Text("CPU/MEM/NET LIVE · 2 PREVIEW")
+      Text("4 LIVE · BATTERY PREVIEW")
         .font(.caption2.weight(.semibold))
         .foregroundStyle(.orange)
         .padding(.horizontal, 8)
@@ -91,6 +91,14 @@ struct DashboardView: View {
       .font(.caption)
       .foregroundStyle(.secondary)
       .lineLimit(1)
+
+      ProgressView(value: diskUsage ?? 0, total: 1)
+        .tint(.green)
+
+      Text("Available \(MetricFormatter.bytes(viewModel.snapshot.diskAvailable))")
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
     }
   }
 

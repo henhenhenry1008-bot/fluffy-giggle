@@ -48,7 +48,8 @@ struct PlaceholderDiskService: DiskProviding {
   func readDisk() async -> DiskReading? {
     DiskReading(
       usedBytes: 243 * PlaceholderUnits.gibibyte,
-      totalBytes: 494 * PlaceholderUnits.gibibyte
+      totalBytes: 494 * PlaceholderUnits.gibibyte,
+      availableBytes: 251 * PlaceholderUnits.gibibyte
     )
   }
 }

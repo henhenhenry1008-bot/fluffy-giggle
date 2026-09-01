@@ -4,7 +4,7 @@ PulseBar is an original macOS 14+ menu bar system monitor built with Swift and S
 
 ## Current status
 
-The project has a compilable menu bar dashboard and a centralized one-second refresh loop. CPU usage is measured from real system-wide Mach tick counters, memory usage comes from Mach VM statistics plus the physical memory size reported by `sysctl`, and network throughput is calculated from native 64-bit BSD interface counters. Disk and battery still come from clearly named placeholder services. Charts, temperature sensors, and privileged operations are not implemented yet.
+The project has a compilable menu bar dashboard and a centralized one-second refresh loop. CPU usage is measured from real system-wide Mach tick counters, memory usage comes from Mach VM statistics plus the physical memory size reported by `sysctl`, network throughput is calculated from native 64-bit BSD interface counters, and disk capacity comes from Foundation volume resource values. Battery still comes from a clearly named placeholder service. Charts, temperature sensors, and privileged operations are not implemented yet.
 
 The data flow is:
 

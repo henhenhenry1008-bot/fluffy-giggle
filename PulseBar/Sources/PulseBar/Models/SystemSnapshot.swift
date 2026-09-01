@@ -17,6 +17,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
   let networkUploadBytesPerSecond: Double?
   let diskUsed: UInt64?
   let diskTotal: UInt64?
+  let diskAvailable: UInt64?
   let batteryPercentage: Double?
   let batteryIsCharging: Bool?
 
@@ -37,6 +38,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     networkUploadBytesPerSecond: Double?,
     diskUsed: UInt64?,
     diskTotal: UInt64?,
+    diskAvailable: UInt64?,
     batteryPercentage: Double?,
     batteryIsCharging: Bool?
   ) {
@@ -56,6 +58,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     self.networkUploadBytesPerSecond = networkUploadBytesPerSecond
     self.diskUsed = diskUsed
     self.diskTotal = diskTotal
+    self.diskAvailable = diskAvailable
     self.batteryPercentage = batteryPercentage
     self.batteryIsCharging = batteryIsCharging
   }
@@ -76,6 +79,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     networkUploadBytesPerSecond: nil,
     diskUsed: nil,
     diskTotal: nil,
+    diskAvailable: nil,
     batteryPercentage: nil,
     batteryIsCharging: nil
   )

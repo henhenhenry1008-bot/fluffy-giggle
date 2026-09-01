@@ -18,7 +18,8 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(usage: 0.32),
       memoryProvider: PlaceholderMemoryService(),
-      networkProvider: PlaceholderNetworkService()
+      networkProvider: PlaceholderNetworkService(),
+      diskProvider: PlaceholderDiskService()
     )
 
     await viewModel.refresh()
@@ -27,6 +28,7 @@ struct PulseBarTests {
     #expect(viewModel.snapshot.memoryUsed != nil)
     #expect(viewModel.snapshot.networkDownloadBytesPerSecond != nil)
     #expect(viewModel.snapshot.diskTotal != nil)
+    #expect(viewModel.snapshot.diskAvailable != nil)
     #expect(viewModel.snapshot.batteryPercentage == 0.83)
     #expect(viewModel.snapshot.batteryIsCharging == true)
   }
@@ -160,6 +162,32 @@ struct PulseBarTests {
       #expect(reading.uploadBytesPerSecond >= 0)
       #expect(reading.downloadBytesPerSecond.isFinite)
       #expect(reading.uploadBytesPerSecond.isFinite)
+    }
+  }
+
+  @Test("Disk calculation derives used space and clamps inconsistent availability")
+  func diskCalculation() {
+    let reading = DiskService.makeReading(totalBytes: 1_000, availableBytes: 400)
+    let clampedReading = DiskService.makeReading(totalBytes: 1_000, availableBytes: 1_200)
+
+    #expect(reading?.usedBytes == 600)
+    #expect(reading?.totalBytes == 1_000)
+    #expect(reading?.availableBytes == 400)
+    #expect(clampedReading?.usedBytes == 0)
+    #expect(clampedReading?.availableBytes == 1_000)
+    #expect(DiskService.makeReading(totalBytes: 0, availableBytes: 0) == nil)
+  }
+
+  @Test("Disk service reads a consistent system-volume capacity")
+  func liveDiskReading() async {
+    let reading = await DiskService().readDisk()
+
+    #expect(reading != nil)
+    if let reading {
+      #expect(reading.totalBytes > 0)
+      #expect(reading.usedBytes <= reading.totalBytes)
+      #expect(reading.availableBytes <= reading.totalBytes)
+      #expect(reading.usedBytes + reading.availableBytes == reading.totalBytes)
     }
   }
 }

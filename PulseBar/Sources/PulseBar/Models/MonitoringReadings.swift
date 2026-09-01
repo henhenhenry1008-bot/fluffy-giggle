@@ -18,6 +18,7 @@ struct NetworkReading: Equatable, Sendable {
 struct DiskReading: Equatable, Sendable {
   let usedBytes: UInt64
   let totalBytes: UInt64
+  let availableBytes: UInt64
 }
 
 struct BatteryReading: Equatable, Sendable {
