@@ -15,7 +15,10 @@ struct PulseBarTests {
   @Test("View model combines provider readings into one snapshot")
   @MainActor
   func snapshotCoordination() async {
-    let viewModel = SystemMonitorViewModel(cpuProvider: PlaceholderCPUService(usage: 0.32))
+    let viewModel = SystemMonitorViewModel(
+      cpuProvider: PlaceholderCPUService(usage: 0.32),
+      memoryProvider: PlaceholderMemoryService()
+    )
 
     await viewModel.refresh()
 
@@ -57,6 +60,49 @@ struct PulseBarTests {
 
     if let usage {
       #expect((0...1).contains(usage))
+    }
+  }
+
+  @Test("Memory calculation treats inactive pages as available")
+  func memoryCalculation() {
+    let pageSize: UInt64 = 4_096
+    let reading = MemoryService.makeReading(
+      totalBytes: 1_000 * pageSize,
+      pageSize: pageSize,
+      freePages: 100,
+      activePages: 500,
+      inactivePages: 200,
+      wiredPages: 200,
+      compressedPages: 50,
+      purgeablePages: 25
+    )
+
+    #expect(reading.availableBytes == 300 * pageSize)
+    #expect(reading.usedBytes == 700 * pageSize)
+    #expect(reading.freeBytes == 100 * pageSize)
+    #expect(reading.activeBytes == 500 * pageSize)
+    #expect(reading.inactiveBytes == 200 * pageSize)
+    #expect(reading.wiredBytes == 200 * pageSize)
+    #expect(reading.compressedBytes == 50 * pageSize)
+    #expect(reading.purgeableBytes == 25 * pageSize)
+  }
+
+  @Test("Memory service reads a consistent physical-memory measurement")
+  func liveMemoryReading() async {
+    let reading = await MemoryService().readMemory()
+
+    #expect(reading != nil)
+    if let reading {
+      #expect(reading.totalBytes > 0)
+      #expect(reading.usedBytes <= reading.totalBytes)
+      #expect(reading.availableBytes <= reading.totalBytes)
+      #expect(reading.usedBytes + reading.availableBytes == reading.totalBytes)
+      #expect(reading.freeBytes <= reading.totalBytes)
+      #expect(reading.activeBytes <= reading.totalBytes)
+      #expect(reading.inactiveBytes <= reading.totalBytes)
+      #expect(reading.wiredBytes <= reading.totalBytes)
+      #expect(reading.compressedBytes <= reading.totalBytes)
+      #expect(reading.purgeableBytes <= reading.totalBytes)
     }
   }
 }

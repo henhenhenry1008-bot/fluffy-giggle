@@ -15,7 +15,7 @@ final class SystemMonitorViewModel: ObservableObject {
 
   init(
     cpuProvider: any CPUProviding = CPUService(),
-    memoryProvider: any MemoryProviding = PlaceholderMemoryService(),
+    memoryProvider: any MemoryProviding = MemoryService(),
     networkProvider: any NetworkProviding = PlaceholderNetworkService(),
     diskProvider: any DiskProviding = PlaceholderDiskService(),
     batteryProvider: any BatteryProviding = PlaceholderBatteryService(),
@@ -84,6 +84,13 @@ final class SystemMonitorViewModel: ObservableObject {
       cpuUsage: values.0,
       memoryUsed: values.1?.usedBytes,
       memoryTotal: values.1?.totalBytes,
+      memoryAvailable: values.1?.availableBytes,
+      memoryFree: values.1?.freeBytes,
+      memoryActive: values.1?.activeBytes,
+      memoryInactive: values.1?.inactiveBytes,
+      memoryWired: values.1?.wiredBytes,
+      memoryCompressed: values.1?.compressedBytes,
+      memoryPurgeable: values.1?.purgeableBytes,
       networkDownloadBytesPerSecond: values.2?.downloadBytesPerSecond,
       networkUploadBytesPerSecond: values.2?.uploadBytesPerSecond,
       diskUsed: values.3?.usedBytes,

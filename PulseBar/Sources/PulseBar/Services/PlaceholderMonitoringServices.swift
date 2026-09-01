@@ -18,9 +18,19 @@ struct PlaceholderCPUService: CPUProviding {
 
 struct PlaceholderMemoryService: MemoryProviding {
   func readMemory() async -> MemoryReading? {
-    MemoryReading(
-      usedBytes: UInt64(9.2 * Double(PlaceholderUnits.gibibyte)),
-      totalBytes: 18 * PlaceholderUnits.gibibyte
+    let total = 18 * PlaceholderUnits.gibibyte
+    let used = UInt64(9.2 * Double(PlaceholderUnits.gibibyte))
+
+    return MemoryReading(
+      usedBytes: used,
+      totalBytes: total,
+      availableBytes: total - used,
+      freeBytes: 2 * PlaceholderUnits.gibibyte,
+      activeBytes: 6 * PlaceholderUnits.gibibyte,
+      inactiveBytes: 4 * PlaceholderUnits.gibibyte,
+      wiredBytes: 2 * PlaceholderUnits.gibibyte,
+      compressedBytes: PlaceholderUnits.gibibyte,
+      purgeableBytes: PlaceholderUnits.gibibyte / 2
     )
   }
 }

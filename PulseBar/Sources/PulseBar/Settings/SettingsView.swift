@@ -5,6 +5,7 @@ struct SettingsView: View {
     Form {
       Section("Development status") {
         LabeledContent("CPU source", value: "Live Mach statistics")
+        LabeledContent("Memory source", value: "Live Mach VM statistics")
         LabeledContent("Other metrics", value: "Placeholder data")
         LabeledContent("Refresh loop", value: "1 second")
         LabeledContent("Minimum system", value: "macOS 14")

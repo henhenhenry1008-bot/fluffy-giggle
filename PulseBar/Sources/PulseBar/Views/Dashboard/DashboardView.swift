@@ -39,7 +39,7 @@ struct DashboardView: View {
 
       Spacer()
 
-      Text("CPU LIVE · OTHERS PREVIEW")
+      Text("CPU/MEM LIVE · 3 PREVIEW")
         .font(.caption2.weight(.semibold))
         .foregroundStyle(.orange)
         .padding(.horizontal, 8)
@@ -71,6 +71,11 @@ struct DashboardView: View {
       .font(.caption)
       .foregroundStyle(.secondary)
       .lineLimit(1)
+
+      Text("Available \(MetricFormatter.bytes(viewModel.snapshot.memoryAvailable))")
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
     }
   }
 

@@ -42,6 +42,9 @@ actor CPUService: CPUProviding {
   }
 
   private static func readSystemTicks() -> CPUTickSnapshot? {
+    let host = mach_host_self()
+    defer { mach_port_deallocate(mach_task_self_, host) }
+
     var loadInfo = host_cpu_load_info_data_t()
     var count = mach_msg_type_number_t(
       MemoryLayout<host_cpu_load_info_data_t>.stride / MemoryLayout<integer_t>.stride
@@ -53,7 +56,7 @@ actor CPUService: CPUProviding {
     let result = withUnsafeMutablePointer(to: &loadInfo) { pointer in
       pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { reboundPointer in
         host_statistics(
-          mach_host_self(),
+          host,
           HOST_CPU_LOAD_INFO,
           reboundPointer,
           &count
