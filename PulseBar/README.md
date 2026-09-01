@@ -17,6 +17,7 @@ Monitoring services -> SystemMonitorViewModel -> SystemSnapshot -> SwiftUI
 ```bash
 swift build
 swift test
+xcodebuild -project PulseBar.xcodeproj -scheme PulseBar -destination 'platform=macOS' build
 ```
 
-Open `Package.swift` in Xcode and run the `PulseBar` executable scheme. A distributable `.app` target, signing settings, and launch-at-login support will be added in a later phase.
+Open `PulseBar.xcodeproj` in Xcode and run the `PulseBar` app scheme. The project includes a macOS application bundle, generated test bundle, hardened runtime, App Sandbox entitlement, menu-bar-only Info.plist configuration, and automatic signing settings. Select your Apple Developer team in Xcode before creating a signed archive for TestFlight.

@@ -1,0 +1,407 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		200000000000000000000001 /* PulseBarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000001 /* PulseBarApp.swift */; };
+		200000000000000000000002 /* MonitoringReadings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000002 /* MonitoringReadings.swift */; };
+		200000000000000000000003 /* SystemSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000003 /* SystemSnapshot.swift */; };
+		200000000000000000000004 /* CPUService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000004 /* CPUService.swift */; };
+		200000000000000000000005 /* MonitoringProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000005 /* MonitoringProtocols.swift */; };
+		200000000000000000000006 /* PlaceholderMonitoringServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000006 /* PlaceholderMonitoringServices.swift */; };
+		200000000000000000000007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000007 /* SettingsView.swift */; };
+		200000000000000000000008 /* MetricFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000008 /* MetricFormatter.swift */; };
+		200000000000000000000009 /* SystemMonitorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000009 /* SystemMonitorViewModel.swift */; };
+		200000000000000000000010 /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000010 /* MetricCard.swift */; };
+		200000000000000000000011 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000011 /* DashboardView.swift */; };
+		200000000000000000000012 /* MenuBarLabelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000012 /* MenuBarLabelView.swift */; };
+		200000000000000000000013 /* PulseBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000013 /* PulseBarTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		700000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 400000000000000000000001;
+			remoteInfo = PulseBar;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		100000000000000000000001 /* PulseBarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/PulseBarApp.swift; sourceTree = "<group>"; };
+		100000000000000000000002 /* MonitoringReadings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/MonitoringReadings.swift; sourceTree = "<group>"; };
+		100000000000000000000003 /* SystemSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SystemSnapshot.swift; sourceTree = "<group>"; };
+		100000000000000000000004 /* CPUService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/CPUService.swift; sourceTree = "<group>"; };
+		100000000000000000000005 /* MonitoringProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/MonitoringProtocols.swift; sourceTree = "<group>"; };
+		100000000000000000000006 /* PlaceholderMonitoringServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PlaceholderMonitoringServices.swift; sourceTree = "<group>"; };
+		100000000000000000000007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/SettingsView.swift; sourceTree = "<group>"; };
+		100000000000000000000008 /* MetricFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/MetricFormatter.swift; sourceTree = "<group>"; };
+		100000000000000000000009 /* SystemMonitorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModels/SystemMonitorViewModel.swift; sourceTree = "<group>"; };
+		100000000000000000000010 /* MetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/MetricCard.swift; sourceTree = "<group>"; };
+		100000000000000000000011 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Dashboard/DashboardView.swift; sourceTree = "<group>"; };
+		100000000000000000000012 /* MenuBarLabelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/MenuBarLabelView.swift; sourceTree = "<group>"; };
+		100000000000000000000013 /* PulseBarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseBarTests.swift; sourceTree = "<group>"; };
+		100000000000000000000014 /* PulseBar-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "PulseBar-Info.plist"; sourceTree = "<group>"; };
+		100000000000000000000015 /* PulseBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PulseBar.entitlements; sourceTree = "<group>"; };
+		100000000000000000000016 /* PulseBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PulseBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		100000000000000000000017 /* PulseBarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PulseBarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		300000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		300000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		000000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000004 /* Sources */,
+				000000000000000000000005 /* Tests */,
+				000000000000000000000006 /* Config */,
+				000000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000016 /* PulseBar.app */,
+				100000000000000000000017 /* PulseBarTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		000000000000000000000004 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000001 /* PulseBarApp.swift */,
+				100000000000000000000002 /* MonitoringReadings.swift */,
+				100000000000000000000003 /* SystemSnapshot.swift */,
+				100000000000000000000004 /* CPUService.swift */,
+				100000000000000000000005 /* MonitoringProtocols.swift */,
+				100000000000000000000006 /* PlaceholderMonitoringServices.swift */,
+				100000000000000000000007 /* SettingsView.swift */,
+				100000000000000000000008 /* MetricFormatter.swift */,
+				100000000000000000000009 /* SystemMonitorViewModel.swift */,
+				100000000000000000000010 /* MetricCard.swift */,
+				100000000000000000000011 /* DashboardView.swift */,
+				100000000000000000000012 /* MenuBarLabelView.swift */,
+			);
+			name = Sources;
+			path = Sources/PulseBar;
+			sourceTree = "<group>";
+		};
+		000000000000000000000005 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000013 /* PulseBarTests.swift */,
+			);
+			name = Tests;
+			path = Tests/PulseBarTests;
+			sourceTree = "<group>";
+		};
+		000000000000000000000006 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000014 /* PulseBar-Info.plist */,
+				100000000000000000000015 /* PulseBar.entitlements */,
+			);
+			name = Config;
+			path = Config;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		400000000000000000000001 /* PulseBar */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 600000000000000000000002 /* Build configuration list for PBXNativeTarget "PulseBar" */;
+			buildPhases = (
+				300000000000000000000001 /* Sources */,
+				300000000000000000000002 /* Frameworks */,
+				300000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PulseBar;
+			productName = PulseBar;
+			productReference = 100000000000000000000016 /* PulseBar.app */;
+			productType = "com.apple.product-type.application";
+		};
+		400000000000000000000002 /* PulseBarTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 600000000000000000000003 /* Build configuration list for PBXNativeTarget "PulseBarTests" */;
+			buildPhases = (
+				300000000000000000000004 /* Sources */,
+				300000000000000000000005 /* Frameworks */,
+				300000000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				800000000000000000000001 /* PBXTargetDependency */,
+			);
+			name = PulseBarTests;
+			productName = PulseBarTests;
+			productReference = 100000000000000000000017 /* PulseBarTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		000000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					400000000000000000000001 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					400000000000000000000002 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 400000000000000000000001;
+					};
+				};
+			};
+			buildConfigurationList = 600000000000000000000001 /* Build configuration list for PBXProject "PulseBar" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 000000000000000000000002;
+			productRefGroup = 000000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				400000000000000000000001 /* PulseBar */,
+				400000000000000000000002 /* PulseBarTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		300000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		300000000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		300000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				200000000000000000000001 /* PulseBarApp.swift in Sources */,
+				200000000000000000000002 /* MonitoringReadings.swift in Sources */,
+				200000000000000000000003 /* SystemSnapshot.swift in Sources */,
+				200000000000000000000004 /* CPUService.swift in Sources */,
+				200000000000000000000005 /* MonitoringProtocols.swift in Sources */,
+				200000000000000000000006 /* PlaceholderMonitoringServices.swift in Sources */,
+				200000000000000000000007 /* SettingsView.swift in Sources */,
+				200000000000000000000008 /* MetricFormatter.swift in Sources */,
+				200000000000000000000009 /* SystemMonitorViewModel.swift in Sources */,
+				200000000000000000000010 /* MetricCard.swift in Sources */,
+				200000000000000000000011 /* DashboardView.swift in Sources */,
+				200000000000000000000012 /* MenuBarLabelView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		300000000000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				200000000000000000000013 /* PulseBarTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		800000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 400000000000000000000001 /* PulseBar */;
+			targetProxy = 700000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		500000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		500000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		500000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/PulseBar.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = "Config/PulseBar-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.henhenhenry1008.PulseBar;
+				PRODUCT_MODULE_NAME = PulseBar;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		500000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/PulseBar.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = "Config/PulseBar-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.henhenhenry1008.PulseBar;
+				PRODUCT_MODULE_NAME = PulseBar;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		500000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.henhenhenry1008.PulseBarTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PulseBar.app/Contents/MacOS/PulseBar";
+			};
+			name = Debug;
+		};
+		500000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.henhenhenry1008.PulseBarTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PulseBar.app/Contents/MacOS/PulseBar";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		600000000000000000000001 /* Build configuration list for PBXProject "PulseBar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				500000000000000000000001 /* Debug */,
+				500000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		600000000000000000000002 /* Build configuration list for PBXNativeTarget "PulseBar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				500000000000000000000003 /* Debug */,
+				500000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		600000000000000000000003 /* Build configuration list for PBXNativeTarget "PulseBarTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				500000000000000000000005 /* Debug */,
+				500000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 000000000000000000000001 /* Project object */;
+}

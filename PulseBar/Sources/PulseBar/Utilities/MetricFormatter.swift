@@ -19,7 +19,7 @@ enum MetricFormatter {
   }
 
   private static func scaledBytes(_ bytes: Double) -> String {
-    let units = ["B", "KB", "MB", "GB", "TB"]
+    let units = ["B", "KiB", "MiB", "GiB", "TiB"]
     var value = max(bytes, 0)
     var unitIndex = 0
 

@@ -7,8 +7,8 @@ struct PulseBarTests {
   @Test("Metric formatter presents percentages and byte rates")
   func metricFormatting() {
     #expect(MetricFormatter.percentage(0.32) == "32%")
-    #expect(MetricFormatter.bytes(18 * 1_024 * 1_024 * 1_024) == "18 GB")
-    #expect(MetricFormatter.rate(2.4 * 1_024 * 1_024) == "2.4 MB/s")
+    #expect(MetricFormatter.bytes(18 * 1_024 * 1_024 * 1_024) == "18 GiB")
+    #expect(MetricFormatter.rate(2.4 * 1_024 * 1_024) == "2.4 MiB/s")
     #expect(MetricFormatter.percentage(nil) == "Unavailable")
   }
 

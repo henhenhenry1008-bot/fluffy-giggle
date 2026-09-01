@@ -37,11 +37,22 @@ final class SystemMonitorViewModel: ObservableObject {
     guard monitoringTask == nil else { return }
 
     monitoringTask = Task { [weak self] in
+      let clock = ContinuousClock()
+      let interval: Duration = .seconds(1)
+      var nextSample = clock.now
+
       while !Task.isCancelled {
         await self?.refresh()
+        nextSample = nextSample.advanced(by: interval)
+
+        let now = clock.now
+        if nextSample <= now {
+          // Skip missed deadlines instead of immediately running catch-up samples.
+          nextSample = now.advanced(by: interval)
+        }
 
         do {
-          try await Task.sleep(for: .seconds(1))
+          try await clock.sleep(until: nextSample, tolerance: .milliseconds(50))
         } catch {
           break
         }
