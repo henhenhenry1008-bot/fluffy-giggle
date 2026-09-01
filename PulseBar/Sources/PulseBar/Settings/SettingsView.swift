@@ -8,14 +8,14 @@ struct SettingsView: View {
         LabeledContent("Memory source", value: "Live Mach VM statistics")
         LabeledContent("Network source", value: "Live BSD interface statistics")
         LabeledContent("Disk source", value: "Live Foundation volume capacity")
-        LabeledContent("Other metrics", value: "Battery placeholder")
+        LabeledContent("Battery source", value: "Live IOKit power sources")
         LabeledContent("Refresh loop", value: "1 second")
         LabeledContent("Minimum system", value: "macOS 14")
       }
 
       Section {
         Text(
-          "Battery monitoring, refresh controls, history, and launch at login will be added incrementally."
+          "Refresh controls, history, and launch at login will be added incrementally."
         )
         .foregroundStyle(.secondary)
       }

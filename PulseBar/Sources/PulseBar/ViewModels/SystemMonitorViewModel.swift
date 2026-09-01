@@ -18,7 +18,7 @@ final class SystemMonitorViewModel: ObservableObject {
     memoryProvider: any MemoryProviding = MemoryService(),
     networkProvider: any NetworkProviding = NetworkService(),
     diskProvider: any DiskProviding = DiskService(),
-    batteryProvider: any BatteryProviding = PlaceholderBatteryService(),
+    batteryProvider: any BatteryProviding = BatteryService(),
     initialSnapshot: SystemSnapshot = .empty
   ) {
     self.cpuProvider = cpuProvider
@@ -97,7 +97,9 @@ final class SystemMonitorViewModel: ObservableObject {
       diskTotal: values.3?.totalBytes,
       diskAvailable: values.3?.availableBytes,
       batteryPercentage: values.4?.percentage,
-      batteryIsCharging: values.4?.isCharging
+      batteryIsCharging: values.4?.isCharging,
+      batteryIsFullyCharged: values.4?.isFullyCharged,
+      batteryIsACPowered: values.4?.isACPowered
     )
   }
 }

@@ -20,6 +20,8 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
   let diskAvailable: UInt64?
   let batteryPercentage: Double?
   let batteryIsCharging: Bool?
+  let batteryIsFullyCharged: Bool?
+  let batteryIsACPowered: Bool?
 
   init(
     id: UUID = UUID(),
@@ -40,7 +42,9 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     diskTotal: UInt64?,
     diskAvailable: UInt64?,
     batteryPercentage: Double?,
-    batteryIsCharging: Bool?
+    batteryIsCharging: Bool?,
+    batteryIsFullyCharged: Bool?,
+    batteryIsACPowered: Bool?
   ) {
     self.id = id
     self.timestamp = timestamp
@@ -61,6 +65,8 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     self.diskAvailable = diskAvailable
     self.batteryPercentage = batteryPercentage
     self.batteryIsCharging = batteryIsCharging
+    self.batteryIsFullyCharged = batteryIsFullyCharged
+    self.batteryIsACPowered = batteryIsACPowered
   }
 
   static let empty = SystemSnapshot(
@@ -81,6 +87,8 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     diskTotal: nil,
     diskAvailable: nil,
     batteryPercentage: nil,
-    batteryIsCharging: nil
+    batteryIsCharging: nil,
+    batteryIsFullyCharged: nil,
+    batteryIsACPowered: nil
   )
 }

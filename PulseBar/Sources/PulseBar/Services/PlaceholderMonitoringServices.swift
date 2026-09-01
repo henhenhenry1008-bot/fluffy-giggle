@@ -56,6 +56,11 @@ struct PlaceholderDiskService: DiskProviding {
 
 struct PlaceholderBatteryService: BatteryProviding {
   func readBattery() async -> BatteryReading? {
-    BatteryReading(percentage: 0.83, isCharging: true)
+    BatteryReading(
+      percentage: 0.83,
+      isCharging: true,
+      isFullyCharged: false,
+      isACPowered: true
+    )
   }
 }

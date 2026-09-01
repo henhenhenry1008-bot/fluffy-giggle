@@ -24,4 +24,6 @@ struct DiskReading: Equatable, Sendable {
 struct BatteryReading: Equatable, Sendable {
   let percentage: Double
   let isCharging: Bool
+  let isFullyCharged: Bool
+  let isACPowered: Bool
 }

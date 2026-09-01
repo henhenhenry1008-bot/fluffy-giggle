@@ -19,7 +19,8 @@ struct PulseBarTests {
       cpuProvider: PlaceholderCPUService(usage: 0.32),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
-      diskProvider: PlaceholderDiskService()
+      diskProvider: PlaceholderDiskService(),
+      batteryProvider: PlaceholderBatteryService()
     )
 
     await viewModel.refresh()
@@ -31,6 +32,8 @@ struct PulseBarTests {
     #expect(viewModel.snapshot.diskAvailable != nil)
     #expect(viewModel.snapshot.batteryPercentage == 0.83)
     #expect(viewModel.snapshot.batteryIsCharging == true)
+    #expect(viewModel.snapshot.batteryIsFullyCharged == false)
+    #expect(viewModel.snapshot.batteryIsACPowered == true)
   }
 
   @Test("CPU delta calculation includes user, system, and nice as busy time")
@@ -188,6 +191,58 @@ struct PulseBarTests {
       #expect(reading.usedBytes <= reading.totalBytes)
       #expect(reading.availableBytes <= reading.totalBytes)
       #expect(reading.usedBytes + reading.availableBytes == reading.totalBytes)
+    }
+  }
+
+  @Test("Battery calculation normalizes capacity and preserves power states")
+  func batteryCalculation() {
+    let reading = BatteryService.makeReading(
+      currentCapacity: 80,
+      maximumCapacity: 100,
+      isCharging: true,
+      isFullyCharged: false,
+      isACPowered: true
+    )
+    let clampedReading = BatteryService.makeReading(
+      currentCapacity: 120,
+      maximumCapacity: 100,
+      isCharging: false,
+      isFullyCharged: true,
+      isACPowered: true
+    )
+
+    #expect(reading?.percentage == 0.8)
+    #expect(reading?.isCharging == true)
+    #expect(reading?.isFullyCharged == false)
+    #expect(reading?.isACPowered == true)
+    #expect(clampedReading?.percentage == 1)
+    #expect(
+      BatteryService.makeReading(
+        currentCapacity: -1,
+        maximumCapacity: 100,
+        isCharging: false,
+        isFullyCharged: false,
+        isACPowered: false
+      ) == nil)
+    #expect(
+      BatteryService.makeReading(
+        currentCapacity: 0,
+        maximumCapacity: 0,
+        isCharging: false,
+        isFullyCharged: false,
+        isACPowered: false
+      ) == nil)
+  }
+
+  @Test("Battery service supports battery-equipped and batteryless Macs")
+  func liveBatteryReading() async {
+    guard let reading = await BatteryService().readBattery() else {
+      return
+    }
+
+    #expect((0...1).contains(reading.percentage))
+    if reading.isCharging || reading.isFullyCharged {
+      #expect(reading.isACPowered)
     }
   }
 }

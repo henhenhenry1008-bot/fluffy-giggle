@@ -39,7 +39,7 @@ struct DashboardView: View {
 
       Spacer()
 
-      Text("4 LIVE · BATTERY PREVIEW")
+      Text("5 LIVE METRICS")
         .font(.caption2.weight(.semibold))
         .foregroundStyle(.orange)
         .padding(.horizontal, 8)
@@ -105,7 +105,7 @@ struct DashboardView: View {
   private var batteryCard: some View {
     MetricCard(
       title: "Battery",
-      systemImage: viewModel.snapshot.batteryIsCharging == true ? "battery.100.bolt" : "battery.75",
+      systemImage: batterySystemImage,
       tint: .green
     ) {
       Text(MetricFormatter.percentage(viewModel.snapshot.batteryPercentage))
@@ -197,9 +197,36 @@ struct DashboardView: View {
   }
 
   private var batteryState: String {
-    guard let isCharging = viewModel.snapshot.batteryIsCharging else {
+    guard viewModel.snapshot.batteryPercentage != nil else {
       return "Unavailable"
     }
-    return isCharging ? "Charging" : "On Battery"
+
+    if viewModel.snapshot.batteryIsFullyCharged == true {
+      return "Fully Charged"
+    }
+    if viewModel.snapshot.batteryIsCharging == true {
+      return "Charging"
+    }
+    if viewModel.snapshot.batteryIsACPowered == true {
+      return "On AC Power"
+    }
+    return "On Battery"
+  }
+
+  private var batterySystemImage: String {
+    guard let percentage = viewModel.snapshot.batteryPercentage else {
+      return "battery.0"
+    }
+    if viewModel.snapshot.batteryIsCharging == true {
+      return "battery.100.bolt"
+    }
+
+    switch percentage {
+    case 0.875...: return "battery.100"
+    case 0.625...: return "battery.75"
+    case 0.375...: return "battery.50"
+    case 0.125...: return "battery.25"
+    default: return "battery.0"
+    }
   }
 }
