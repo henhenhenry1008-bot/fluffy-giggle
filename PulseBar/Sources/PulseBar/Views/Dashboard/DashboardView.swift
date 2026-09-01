@@ -39,7 +39,7 @@ struct DashboardView: View {
 
       Spacer()
 
-      Text("CPU/MEM LIVE · 3 PREVIEW")
+      Text("CPU/MEM/NET LIVE · 2 PREVIEW")
         .font(.caption2.weight(.semibold))
         .foregroundStyle(.orange)
         .padding(.horizontal, 8)

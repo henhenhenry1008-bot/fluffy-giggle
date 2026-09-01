@@ -17,7 +17,8 @@ struct PulseBarTests {
   func snapshotCoordination() async {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(usage: 0.32),
-      memoryProvider: PlaceholderMemoryService()
+      memoryProvider: PlaceholderMemoryService(),
+      networkProvider: PlaceholderNetworkService()
     )
 
     await viewModel.refresh()
@@ -53,9 +54,14 @@ struct PulseBarTests {
     let service = CPUService()
 
     #expect(await service.readCPUUsage() == nil)
-    try await Task.sleep(for: .milliseconds(100))
 
-    let usage = await service.readCPUUsage()
+    var usage: Double?
+    for _ in 0..<10 {
+      try await Task.sleep(for: .milliseconds(100))
+      usage = await service.readCPUUsage()
+      if usage != nil { break }
+    }
+
     #expect(usage != nil)
 
     if let usage {
@@ -103,6 +109,57 @@ struct PulseBarTests {
       #expect(reading.wiredBytes <= reading.totalBytes)
       #expect(reading.compressedBytes <= reading.totalBytes)
       #expect(reading.purgeableBytes <= reading.totalBytes)
+    }
+  }
+
+  @Test("Network rates handle new, removed, and reset interfaces")
+  func networkRateCalculation() {
+    let previous: NetworkCounterSnapshot = [
+      1: NetworkInterfaceCounters(receivedBytes: 1_000, sentBytes: 500),
+      2: NetworkInterfaceCounters(receivedBytes: 8_000, sentBytes: 4_000),
+      4: NetworkInterfaceCounters(receivedBytes: 90_000, sentBytes: 45_000),
+    ]
+    let current: NetworkCounterSnapshot = [
+      1: NetworkInterfaceCounters(receivedBytes: 5_000, sentBytes: 2_500),
+      2: NetworkInterfaceCounters(receivedBytes: 100, sentBytes: 4_500),
+      3: NetworkInterfaceCounters(receivedBytes: 50_000, sentBytes: 25_000),
+    ]
+
+    let reading = NetworkService.makeReading(
+      previous: previous,
+      current: current,
+      elapsedSeconds: 2
+    )
+
+    #expect(reading?.downloadBytesPerSecond == 2_000)
+    #expect(reading?.uploadBytesPerSecond == 1_250)
+  }
+
+  @Test("Network rate calculation rejects a non-positive interval")
+  func invalidNetworkInterval() {
+    let counters: NetworkCounterSnapshot = [
+      1: NetworkInterfaceCounters(receivedBytes: 1_000, sentBytes: 500)
+    ]
+
+    #expect(
+      NetworkService.makeReading(previous: counters, current: counters, elapsedSeconds: 0) == nil
+    )
+  }
+
+  @Test("Network service reads non-negative aggregate throughput")
+  func liveNetworkReading() async throws {
+    let service = NetworkService()
+
+    #expect(await service.readNetwork() == nil)
+    try await Task.sleep(for: .milliseconds(100))
+
+    let reading = await service.readNetwork()
+    #expect(reading != nil)
+    if let reading {
+      #expect(reading.downloadBytesPerSecond >= 0)
+      #expect(reading.uploadBytesPerSecond >= 0)
+      #expect(reading.downloadBytesPerSecond.isFinite)
+      #expect(reading.uploadBytesPerSecond.isFinite)
     }
   }
 }

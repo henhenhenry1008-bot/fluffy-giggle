@@ -6,7 +6,8 @@ struct SettingsView: View {
       Section("Development status") {
         LabeledContent("CPU source", value: "Live Mach statistics")
         LabeledContent("Memory source", value: "Live Mach VM statistics")
-        LabeledContent("Other metrics", value: "Placeholder data")
+        LabeledContent("Network source", value: "Live BSD interface statistics")
+        LabeledContent("Other metrics", value: "Disk and battery placeholders")
         LabeledContent("Refresh loop", value: "1 second")
         LabeledContent("Minimum system", value: "macOS 14")
       }

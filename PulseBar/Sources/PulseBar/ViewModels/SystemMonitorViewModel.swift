@@ -16,7 +16,7 @@ final class SystemMonitorViewModel: ObservableObject {
   init(
     cpuProvider: any CPUProviding = CPUService(),
     memoryProvider: any MemoryProviding = MemoryService(),
-    networkProvider: any NetworkProviding = PlaceholderNetworkService(),
+    networkProvider: any NetworkProviding = NetworkService(),
     diskProvider: any DiskProviding = PlaceholderDiskService(),
     batteryProvider: any BatteryProviding = PlaceholderBatteryService(),
     initialSnapshot: SystemSnapshot = .empty
