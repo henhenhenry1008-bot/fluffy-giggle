@@ -6,6 +6,7 @@ final class SystemMonitorViewModel: ObservableObject {
   @Published private(set) var snapshot: SystemSnapshot
   @Published private(set) var isRefreshing = false
 
+  private var monitoringTask: Task<Void, Never>?
   private let cpuProvider: any CPUProviding
   private let memoryProvider: any MemoryProviding
   private let networkProvider: any NetworkProviding
@@ -13,7 +14,7 @@ final class SystemMonitorViewModel: ObservableObject {
   private let batteryProvider: any BatteryProviding
 
   init(
-    cpuProvider: any CPUProviding = PlaceholderCPUService(),
+    cpuProvider: any CPUProviding = CPUService(),
     memoryProvider: any MemoryProviding = PlaceholderMemoryService(),
     networkProvider: any NetworkProviding = PlaceholderNetworkService(),
     diskProvider: any DiskProviding = PlaceholderDiskService(),
@@ -26,6 +27,31 @@ final class SystemMonitorViewModel: ObservableObject {
     self.diskProvider = diskProvider
     self.batteryProvider = batteryProvider
     snapshot = initialSnapshot
+  }
+
+  deinit {
+    monitoringTask?.cancel()
+  }
+
+  func startMonitoring() {
+    guard monitoringTask == nil else { return }
+
+    monitoringTask = Task { [weak self] in
+      while !Task.isCancelled {
+        await self?.refresh()
+
+        do {
+          try await Task.sleep(for: .seconds(1))
+        } catch {
+          break
+        }
+      }
+    }
+  }
+
+  func stopMonitoring() {
+    monitoringTask?.cancel()
+    monitoringTask = nil
   }
 
   func refresh() async {

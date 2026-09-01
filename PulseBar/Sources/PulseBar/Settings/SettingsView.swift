@@ -4,8 +4,9 @@ struct SettingsView: View {
   var body: some View {
     Form {
       Section("Development status") {
-        LabeledContent("Monitoring source", value: "Placeholder data")
-        LabeledContent("Refresh loop", value: "Not enabled")
+        LabeledContent("CPU source", value: "Live Mach statistics")
+        LabeledContent("Other metrics", value: "Placeholder data")
+        LabeledContent("Refresh loop", value: "1 second")
         LabeledContent("Minimum system", value: "macOS 14")
       }
 

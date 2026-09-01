@@ -39,7 +39,7 @@ struct DashboardView: View {
 
       Spacer()
 
-      Text("PREVIEW DATA")
+      Text("CPU LIVE · OTHERS PREVIEW")
         .font(.caption2.weight(.semibold))
         .foregroundStyle(.orange)
         .padding(.horizontal, 8)

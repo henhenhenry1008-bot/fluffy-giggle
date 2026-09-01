@@ -2,14 +2,14 @@
 
 PulseBar is an original macOS 14+ menu bar system monitor built with Swift and SwiftUI.
 
-## Phase one
+## Current status
 
-This first phase establishes the application architecture and a compilable menu bar dashboard. All displayed measurements come from clearly named placeholder services. No hardware APIs, timers, charts, temperature sensors, or privileged operations are implemented yet.
+The project has a compilable menu bar dashboard and a centralized one-second refresh loop. CPU usage is measured from real system-wide Mach tick counters. Memory, network, disk, and battery still come from clearly named placeholder services. Charts, temperature sensors, and privileged operations are not implemented yet.
 
 The data flow is:
 
 ```text
-Placeholder services -> SystemMonitorViewModel -> SystemSnapshot -> SwiftUI
+Monitoring services -> SystemMonitorViewModel -> SystemSnapshot -> SwiftUI
 ```
 
 ## Build and test

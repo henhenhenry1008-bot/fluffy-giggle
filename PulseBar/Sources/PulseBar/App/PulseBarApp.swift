@@ -7,11 +7,11 @@ struct PulseBarApp: App {
   var body: some Scene {
     MenuBarExtra {
       DashboardView(viewModel: monitor)
-        .task {
-          await monitor.refresh()
-        }
     } label: {
       MenuBarLabelView(snapshot: monitor.snapshot)
+        .onAppear {
+          monitor.startMonitoring()
+        }
     }
     .menuBarExtraStyle(.window)
 
