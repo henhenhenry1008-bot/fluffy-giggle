@@ -82,6 +82,16 @@ struct DashboardView: View {
       ProgressView(value: viewModel.snapshot.cpuUsage ?? 0, total: 1)
         .tint(.blue)
 
+      MetricChart(
+        samples: viewModel.history,
+        primarySeries: MetricChartSeries(name: "CPU", color: .blue) { snapshot in
+          snapshot.cpuUsage
+        },
+        fixedYDomain: 0...1,
+        accessibilityLabel: "CPU usage history"
+      )
+      .frame(height: 40)
+
       Text("Total system usage")
         .font(.caption2)
         .foregroundStyle(.secondary)
@@ -103,6 +113,16 @@ struct DashboardView: View {
 
       ProgressView(value: memoryUsage ?? 0, total: 1)
         .tint(.purple)
+
+      MetricChart(
+        samples: viewModel.history,
+        primarySeries: MetricChartSeries(name: "Memory", color: .purple) { snapshot in
+          Self.memoryUsage(for: snapshot)
+        },
+        fixedYDomain: 0...1,
+        accessibilityLabel: "Memory usage history"
+      )
+      .frame(height: 40)
 
       Text("Available \(MetricFormatter.bytes(viewModel.snapshot.memoryAvailable))")
         .font(.caption2)
@@ -159,16 +179,30 @@ struct DashboardView: View {
         networkValue(
           symbol: "arrow.down",
           title: "Download",
-          value: viewModel.snapshot.networkDownloadBytesPerSecond
+          value: viewModel.snapshot.networkDownloadBytesPerSecond,
+          tint: .cyan
         )
 
         networkValue(
           symbol: "arrow.up",
           title: "Upload",
-          value: viewModel.snapshot.networkUploadBytesPerSecond
+          value: viewModel.snapshot.networkUploadBytesPerSecond,
+          tint: .orange
         )
       }
       .frame(maxWidth: .infinity, alignment: .leading)
+
+      MetricChart(
+        samples: viewModel.history,
+        primarySeries: MetricChartSeries(name: "Download", color: .cyan) { snapshot in
+          snapshot.networkDownloadBytesPerSecond
+        },
+        secondarySeries: MetricChartSeries(name: "Upload", color: .orange) { snapshot in
+          snapshot.networkUploadBytesPerSecond
+        },
+        accessibilityLabel: "Network throughput history"
+      )
+      .frame(height: 48)
     }
   }
 
@@ -193,10 +227,16 @@ struct DashboardView: View {
     .controlSize(.small)
   }
 
-  private func networkValue(symbol: String, title: String, value: Double?) -> some View {
+  private func networkValue(
+    symbol: String,
+    title: String,
+    value: Double?,
+    tint: Color
+  ) -> some View {
     HStack(spacing: 8) {
       Image(systemName: symbol)
         .font(.body.weight(.semibold))
+        .foregroundStyle(tint)
 
       VStack(alignment: .leading, spacing: 2) {
         Text(title)
@@ -210,8 +250,12 @@ struct DashboardView: View {
   }
 
   private var memoryUsage: Double? {
-    guard let used = viewModel.snapshot.memoryUsed,
-      let total = viewModel.snapshot.memoryTotal,
+    Self.memoryUsage(for: viewModel.snapshot)
+  }
+
+  private static func memoryUsage(for snapshot: SystemSnapshot) -> Double? {
+    guard let used = snapshot.memoryUsed,
+      let total = snapshot.memoryTotal,
       total > 0
     else {
       return nil

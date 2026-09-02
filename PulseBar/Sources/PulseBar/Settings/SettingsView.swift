@@ -10,12 +10,13 @@ struct SettingsView: View {
         LabeledContent("Disk source", value: "Live Foundation volume capacity")
         LabeledContent("Battery source", value: "Live IOKit power sources")
         LabeledContent("Refresh loop", value: "0.5 / 1 / 2 / 5 seconds")
+        LabeledContent("History", value: "120 samples")
         LabeledContent("Minimum system", value: "macOS 14")
       }
 
       Section {
         Text(
-          "Refresh controls, history, and launch at login will be added incrementally."
+          "Refresh controls and launch at login will be added incrementally."
         )
         .foregroundStyle(.secondary)
       }

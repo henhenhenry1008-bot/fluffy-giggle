@@ -7,6 +7,7 @@ final class SystemMonitorViewModel: ObservableObject {
   @Published private(set) var isRefreshing = false
   @Published private(set) var isMonitoring = false
   @Published private(set) var refreshInterval: MonitoringRefreshInterval
+  private(set) var history: RingBuffer<SystemSnapshot>
 
   private var monitoringTask: Task<Void, Never>?
   private let cpuProvider: any CPUProviding
@@ -22,7 +23,8 @@ final class SystemMonitorViewModel: ObservableObject {
     diskProvider: any DiskProviding = DiskService(),
     batteryProvider: any BatteryProviding = BatteryService(),
     initialSnapshot: SystemSnapshot = .empty,
-    refreshInterval: MonitoringRefreshInterval = .oneSecond
+    refreshInterval: MonitoringRefreshInterval = .oneSecond,
+    historyCapacity: Int = 120
   ) {
     self.cpuProvider = cpuProvider
     self.memoryProvider = memoryProvider
@@ -31,6 +33,7 @@ final class SystemMonitorViewModel: ObservableObject {
     self.batteryProvider = batteryProvider
     snapshot = initialSnapshot
     self.refreshInterval = refreshInterval
+    history = RingBuffer(capacity: historyCapacity)
   }
 
   deinit {
@@ -108,7 +111,7 @@ final class SystemMonitorViewModel: ObservableObject {
     // an interval change replaces its loop.
     guard !Task.isCancelled else { return }
 
-    snapshot = SystemSnapshot(
+    let nextSnapshot = SystemSnapshot(
       timestamp: .now,
       cpuUsage: values.0,
       memoryUsed: values.1?.usedBytes,
@@ -130,5 +133,8 @@ final class SystemMonitorViewModel: ObservableObject {
       batteryIsFullyCharged: values.4?.isFullyCharged,
       batteryIsACPowered: values.4?.isACPowered
     )
+
+    history.append(nextSnapshot)
+    snapshot = nextSnapshot
   }
 }

@@ -25,6 +25,8 @@
 		200000000000000000000016 /* DiskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000020 /* DiskService.swift */; };
 		200000000000000000000017 /* BatteryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000021 /* BatteryService.swift */; };
 		200000000000000000000018 /* MonitoringRefreshInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000022 /* MonitoringRefreshInterval.swift */; };
+		200000000000000000000019 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000023 /* RingBuffer.swift */; };
+		200000000000000000000020 /* MetricChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000024 /* MetricChart.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +62,8 @@
 		100000000000000000000020 /* DiskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/DiskService.swift; sourceTree = "<group>"; };
 		100000000000000000000021 /* BatteryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/BatteryService.swift; sourceTree = "<group>"; };
 		100000000000000000000022 /* MonitoringRefreshInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/MonitoringRefreshInterval.swift; sourceTree = "<group>"; };
+		100000000000000000000023 /* RingBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/RingBuffer.swift; sourceTree = "<group>"; };
+		100000000000000000000024 /* MetricChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/MetricChart.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -115,8 +119,10 @@
 				100000000000000000000006 /* PlaceholderMonitoringServices.swift */,
 				100000000000000000000007 /* SettingsView.swift */,
 				100000000000000000000008 /* MetricFormatter.swift */,
+				100000000000000000000023 /* RingBuffer.swift */,
 				100000000000000000000009 /* SystemMonitorViewModel.swift */,
 				100000000000000000000010 /* MetricCard.swift */,
+				100000000000000000000024 /* MetricChart.swift */,
 				100000000000000000000011 /* DashboardView.swift */,
 				100000000000000000000012 /* MenuBarLabelView.swift */,
 			);
@@ -254,8 +260,10 @@
 				200000000000000000000006 /* PlaceholderMonitoringServices.swift in Sources */,
 				200000000000000000000007 /* SettingsView.swift in Sources */,
 				200000000000000000000008 /* MetricFormatter.swift in Sources */,
+				200000000000000000000019 /* RingBuffer.swift in Sources */,
 				200000000000000000000009 /* SystemMonitorViewModel.swift in Sources */,
 				200000000000000000000010 /* MetricCard.swift in Sources */,
+				200000000000000000000020 /* MetricChart.swift in Sources */,
 				200000000000000000000011 /* DashboardView.swift in Sources */,
 				200000000000000000000012 /* MenuBarLabelView.swift in Sources */,
 			);

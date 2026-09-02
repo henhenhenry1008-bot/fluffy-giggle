@@ -57,6 +57,44 @@ struct PulseBarTests {
     #expect(viewModel.snapshot.batteryIsCharging == true)
     #expect(viewModel.snapshot.batteryIsFullyCharged == false)
     #expect(viewModel.snapshot.batteryIsACPowered == true)
+    #expect(viewModel.history.count == 1)
+    #expect(viewModel.history.last == viewModel.snapshot)
+  }
+
+  @Test("Ring buffer retains only the newest elements in chronological order")
+  func boundedRingBuffer() {
+    var buffer = RingBuffer<Int>(capacity: 3)
+    for value in 1...5 {
+      buffer.append(value)
+    }
+
+    #expect(Array(buffer) == [3, 4, 5])
+    #expect(buffer.count == 3)
+    #expect(buffer.capacity == 3)
+
+    var zeroCapacityBuffer = RingBuffer<Int>(capacity: 0)
+    zeroCapacityBuffer.append(1)
+    #expect(zeroCapacityBuffer.isEmpty)
+  }
+
+  @Test("View model history never exceeds its configured capacity")
+  @MainActor
+  func boundedSnapshotHistory() async {
+    let viewModel = SystemMonitorViewModel(
+      cpuProvider: PlaceholderCPUService(),
+      memoryProvider: PlaceholderMemoryService(),
+      networkProvider: PlaceholderNetworkService(),
+      diskProvider: PlaceholderDiskService(),
+      batteryProvider: PlaceholderBatteryService(),
+      historyCapacity: 2
+    )
+
+    await viewModel.refresh()
+    await viewModel.refresh()
+    await viewModel.refresh()
+
+    #expect(viewModel.history.count == 2)
+    #expect(viewModel.history.last == viewModel.snapshot)
   }
 
   @Test("Refresh intervals expose the four supported cadences")
