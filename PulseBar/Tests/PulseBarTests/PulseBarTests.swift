@@ -10,6 +10,29 @@ struct PulseBarTests {
     #expect(MetricFormatter.bytes(18 * 1_024 * 1_024 * 1_024) == "18 GiB")
     #expect(MetricFormatter.rate(2.4 * 1_024 * 1_024) == "2.4 MiB/s")
     #expect(MetricFormatter.percentage(nil) == "Unavailable")
+    #expect(MetricFormatter.compactPercentage(nil) == "—")
+    #expect(MetricFormatter.compactRate(2.4 * 1_024 * 1_024) == "2.4M")
+  }
+
+  @Test("Menu bar presentation is compact and includes download throughput")
+  func menuBarPresentation() {
+    let presentation = MenuBarPresentation(
+      cpuUsage: 0.23,
+      memoryUsage: 0.51,
+      downloadBytesPerSecond: 2.4 * 1_024 * 1_024
+    )
+
+    #expect(presentation.title == "CPU 23%  MEM 51%  ↓ 2.4M")
+    #expect(
+      presentation.accessibilityLabel
+        == "CPU 23%, memory 51%, download 2.4 MiB/s")
+
+    let unavailablePresentation = MenuBarPresentation(
+      cpuUsage: nil,
+      memoryUsage: nil,
+      downloadBytesPerSecond: nil
+    )
+    #expect(unavailablePresentation.title == "CPU —  MEM —  ↓ —")
   }
 
   @Test("View model combines provider readings into one snapshot")

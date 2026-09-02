@@ -20,15 +20,24 @@ struct MetricCard<Content: View>: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
-      Label(title, systemImage: systemImage)
-        .font(.headline)
-        .foregroundStyle(tint)
+      HStack(spacing: 8) {
+        Image(systemName: systemImage)
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(tint)
+          .frame(width: 24, height: 24)
+          .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+
+        Text(title)
+          .font(.subheadline.weight(.semibold))
+
+        Spacer(minLength: 0)
+      }
 
       content
     }
-    .frame(maxWidth: .infinity, minHeight: 94, alignment: .topLeading)
+    .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
     .padding(12)
-    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     .overlay {
       RoundedRectangle(cornerRadius: 12, style: .continuous)
         .strokeBorder(.primary.opacity(0.08))

@@ -10,7 +10,7 @@ struct DashboardView: View {
   ]
 
   var body: some View {
-    VStack(spacing: 14) {
+    VStack(spacing: 12) {
       header
 
       LazyVGrid(columns: columns, spacing: 10) {
@@ -25,26 +25,51 @@ struct DashboardView: View {
     }
     .padding(16)
     .frame(width: 390)
+    .background(.ultraThinMaterial)
   }
 
   private var header: some View {
-    HStack(alignment: .firstTextBaseline) {
-      VStack(alignment: .leading, spacing: 2) {
+    HStack(spacing: 10) {
+      Image(systemName: "waveform.path.ecg")
+        .font(.title3.weight(.semibold))
+        .foregroundStyle(.white)
+        .frame(width: 34, height: 34)
+        .background(.blue.gradient, in: RoundedRectangle(cornerRadius: 10))
+
+      VStack(alignment: .leading, spacing: 1) {
         Text("PulseBar")
-          .font(.title2.weight(.semibold))
+          .font(.headline)
         Text("System overview")
-          .font(.caption)
+          .font(.caption2)
           .foregroundStyle(.secondary)
       }
 
       Spacer()
 
-      Text("5 LIVE METRICS")
-        .font(.caption2.weight(.semibold))
-        .foregroundStyle(.orange)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.orange.opacity(0.12), in: Capsule())
+      HStack(spacing: 5) {
+        Circle()
+          .fill(monitoringStatusTint)
+          .frame(width: 6, height: 6)
+        Text(monitoringStatusTitle)
+          .font(.caption2.weight(.semibold))
+      }
+      .foregroundStyle(monitoringStatusTint)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 5)
+      .background(monitoringStatusTint.opacity(0.1), in: Capsule())
+
+      Button {
+        Task {
+          await viewModel.refresh()
+        }
+      } label: {
+        Image(systemName: "arrow.clockwise")
+          .frame(width: 24, height: 24)
+      }
+      .buttonStyle(.plain)
+      .disabled(viewModel.isRefreshing)
+      .help("Refresh now")
+      .accessibilityLabel("Refresh system metrics")
     }
   }
 
@@ -56,6 +81,10 @@ struct DashboardView: View {
 
       ProgressView(value: viewModel.snapshot.cpuUsage ?? 0, total: 1)
         .tint(.blue)
+
+      Text("Total system usage")
+        .font(.caption2)
+        .foregroundStyle(.secondary)
     }
   }
 
@@ -71,6 +100,9 @@ struct DashboardView: View {
       .font(.caption)
       .foregroundStyle(.secondary)
       .lineLimit(1)
+
+      ProgressView(value: memoryUsage ?? 0, total: 1)
+        .tint(.purple)
 
       Text("Available \(MetricFormatter.bytes(viewModel.snapshot.memoryAvailable))")
         .font(.caption2)
@@ -106,7 +138,7 @@ struct DashboardView: View {
     MetricCard(
       title: "Battery",
       systemImage: batterySystemImage,
-      tint: .green
+      tint: batteryTint
     ) {
       Text(MetricFormatter.percentage(viewModel.snapshot.batteryPercentage))
         .font(.title2.weight(.semibold))
@@ -115,6 +147,9 @@ struct DashboardView: View {
       Text(batteryState)
         .font(.caption)
         .foregroundStyle(.secondary)
+
+      ProgressView(value: viewModel.snapshot.batteryPercentage ?? 0, total: 1)
+        .tint(batteryTint)
     }
   }
 
@@ -133,27 +168,25 @@ struct DashboardView: View {
           value: viewModel.snapshot.networkUploadBytesPerSecond
         )
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
   }
 
   private var footer: some View {
-    HStack {
-      Button {
-        Task {
-          await viewModel.refresh()
-        }
-      } label: {
-        Label("Refresh", systemImage: "arrow.clockwise")
-      }
-      .disabled(viewModel.isRefreshing)
-
+    HStack(spacing: 12) {
       SettingsLink {
         Label("Settings", systemImage: "gearshape")
       }
 
+      Button {
+        showAboutPanel()
+      } label: {
+        Label("About", systemImage: "info.circle")
+      }
+
       Spacer()
 
-      Button("Quit") {
+      Button("Quit PulseBar") {
         NSApplication.shared.terminate(nil)
       }
     }
@@ -228,5 +261,36 @@ struct DashboardView: View {
     case 0.125...: return "battery.25"
     default: return "battery.0"
     }
+  }
+
+  private var batteryTint: Color {
+    guard let percentage = viewModel.snapshot.batteryPercentage else {
+      return .secondary
+    }
+    if viewModel.snapshot.batteryIsCharging == true {
+      return .green
+    }
+    return percentage <= 0.2 ? .orange : .green
+  }
+
+  private var hasReceivedMetrics: Bool {
+    viewModel.snapshot.cpuUsage != nil
+      || viewModel.snapshot.memoryTotal != nil
+      || viewModel.snapshot.networkDownloadBytesPerSecond != nil
+      || viewModel.snapshot.diskTotal != nil
+      || viewModel.snapshot.batteryPercentage != nil
+  }
+
+  private var monitoringStatusTitle: String {
+    hasReceivedMetrics ? "LIVE" : "STARTING"
+  }
+
+  private var monitoringStatusTint: Color {
+    hasReceivedMetrics ? .green : .orange
+  }
+
+  private func showAboutPanel() {
+    NSApplication.shared.activate(ignoringOtherApps: true)
+    NSApplication.shared.orderFrontStandardAboutPanel(nil)
   }
 }
