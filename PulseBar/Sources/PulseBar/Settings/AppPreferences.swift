@@ -9,7 +9,6 @@ enum AppPreferenceKey {
   static let showsNetworkDownload = "preferences.menuBar.showsNetworkDownload"
   static let showsNetworkUpload = "preferences.menuBar.showsNetworkUpload"
   static let showsBattery = "preferences.menuBar.showsBattery"
-  static let launchAtLogin = "preferences.general.launchAtLogin"
   static let appearance = "preferences.appearance.colorScheme"
 }
 

@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import PulseBar
@@ -154,6 +155,71 @@ struct PulseBarTests {
     #expect(MonitoringHistoryLength.allCases.map(\.rawValue) == [60, 120, 300])
     #expect(NetworkDisplayUnit.bitsPerSecond.rawValue == "bitsPerSecond")
     #expect(AppearancePreference.dark.colorScheme == .dark)
+  }
+
+  @Test("Launch at login registration and removal are idempotent")
+  @MainActor
+  func launchAtLoginRegistration() {
+    let service = MockLaunchAtLoginService(status: .disabled)
+    let controller = LaunchAtLoginController(service: service)
+
+    #expect(!controller.isEnabled)
+    controller.setEnabled(false)
+    #expect(service.unregisterCallCount == 0)
+
+    controller.setEnabled(true)
+    #expect(service.registerCallCount == 1)
+    #expect(controller.status == .enabled)
+    #expect(controller.isEnabled)
+
+    controller.setEnabled(true)
+    #expect(service.registerCallCount == 1)
+
+    controller.setEnabled(false)
+    #expect(service.unregisterCallCount == 1)
+    #expect(controller.status == .disabled)
+    #expect(!controller.isEnabled)
+  }
+
+  @Test("Launch at login exposes approval and refreshes external changes")
+  @MainActor
+  func launchAtLoginApproval() {
+    let service = MockLaunchAtLoginService(status: .requiresApproval)
+    let controller = LaunchAtLoginController(service: service)
+
+    #expect(controller.isEnabled)
+    #expect(controller.status.title == "Approval Required")
+
+    controller.openSystemSettings()
+    #expect(service.openSettingsCallCount == 1)
+
+    service.status = .enabled
+    controller.refresh()
+    #expect(controller.status == .enabled)
+  }
+
+  @Test("Launch at login reports failures and rejects unavailable services")
+  @MainActor
+  func launchAtLoginFailure() {
+    let failingService = MockLaunchAtLoginService(status: .disabled)
+    failingService.registerError = StubLaunchAtLoginError()
+    let failingController = LaunchAtLoginController(service: failingService)
+
+    failingController.setEnabled(true)
+
+    #expect(failingController.status == .disabled)
+    #expect(failingController.errorMessage?.contains("Registration failed") == true)
+
+    failingService.status = .enabled
+    failingController.refresh()
+    #expect(failingController.errorMessage == nil)
+
+    let unavailableService = MockLaunchAtLoginService(status: .unavailable)
+    let unavailableController = LaunchAtLoginController(service: unavailableService)
+
+    unavailableController.setEnabled(true)
+    #expect(!unavailableController.canChange)
+    #expect(unavailableService.registerCallCount == 0)
   }
 
   @Test("Refresh intervals expose the four supported cadences")
@@ -404,5 +470,45 @@ struct PulseBarTests {
     if reading.isCharging || reading.isFullyCharged {
       #expect(reading.isACPowered)
     }
+  }
+}
+
+@MainActor
+private final class MockLaunchAtLoginService: LaunchAtLoginServicing {
+  var status: LaunchAtLoginStatus
+  var registerError: Error?
+  var unregisterError: Error?
+  var registerCallCount = 0
+  var unregisterCallCount = 0
+  var openSettingsCallCount = 0
+
+  init(status: LaunchAtLoginStatus) {
+    self.status = status
+  }
+
+  func register() throws {
+    registerCallCount += 1
+    if let registerError {
+      throw registerError
+    }
+    status = .enabled
+  }
+
+  func unregister() throws {
+    unregisterCallCount += 1
+    if let unregisterError {
+      throw unregisterError
+    }
+    status = .disabled
+  }
+
+  func openSystemSettings() {
+    openSettingsCallCount += 1
+  }
+}
+
+private struct StubLaunchAtLoginError: LocalizedError {
+  var errorDescription: String? {
+    "Registration failed"
   }
 }

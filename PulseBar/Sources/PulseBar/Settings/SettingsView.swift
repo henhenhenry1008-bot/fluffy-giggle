@@ -1,7 +1,8 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
-  @AppStorage(AppPreferenceKey.launchAtLogin) private var launchAtLogin = false
+  @StateObject private var launchAtLogin = LaunchAtLoginController()
   @AppStorage(AppPreferenceKey.showsCPU) private var showsCPU = true
   @AppStorage(AppPreferenceKey.showsMemory) private var showsMemory = true
   @AppStorage(AppPreferenceKey.showsNetworkDownload) private var showsNetworkDownload = true
@@ -19,12 +20,33 @@ struct SettingsView: View {
   var body: some View {
     Form {
       Section("General") {
-        Toggle("Launch at Login", isOn: $launchAtLogin)
-          .disabled(true)
+        Toggle(
+          "Launch at Login",
+          isOn: Binding(
+            get: { launchAtLogin.isEnabled },
+            set: { launchAtLogin.setEnabled($0) }
+          )
+        )
+        .disabled(!launchAtLogin.canChange)
 
-        Text("Launch at Login will be connected in the next development stage.")
+        LabeledContent("Status", value: launchAtLogin.status.title)
+
+        Text(launchAtLogin.status.detail)
           .font(.caption)
           .foregroundStyle(.secondary)
+
+        if launchAtLogin.status == .requiresApproval {
+          Button("Open Login Items Settings") {
+            launchAtLogin.openSystemSettings()
+          }
+        }
+
+        if let errorMessage = launchAtLogin.errorMessage {
+          Text(errorMessage)
+            .font(.caption)
+            .foregroundStyle(.red)
+            .textSelection(.enabled)
+        }
       }
 
       Section("Menu Bar") {
@@ -66,5 +88,13 @@ struct SettingsView: View {
     }
     .formStyle(.grouped)
     .frame(width: 480, height: 500)
+    .onAppear {
+      launchAtLogin.refresh()
+    }
+    .onReceive(
+      NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+    ) { _ in
+      launchAtLogin.refresh()
+    }
   }
 }
