@@ -9,7 +9,7 @@ struct SettingsView: View {
         LabeledContent("Network source", value: "Live BSD interface statistics")
         LabeledContent("Disk source", value: "Live Foundation volume capacity")
         LabeledContent("Battery source", value: "Live IOKit power sources")
-        LabeledContent("Refresh loop", value: "1 second")
+        LabeledContent("Refresh loop", value: "0.5 / 1 / 2 / 5 seconds")
         LabeledContent("Minimum system", value: "macOS 14")
       }
 

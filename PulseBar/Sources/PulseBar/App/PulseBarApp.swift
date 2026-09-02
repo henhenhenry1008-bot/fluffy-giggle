@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @main
@@ -11,6 +12,11 @@ struct PulseBarApp: App {
       MenuBarLabelView(snapshot: monitor.snapshot)
         .onAppear {
           monitor.startMonitoring()
+        }
+        .onReceive(
+          NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)
+        ) { _ in
+          monitor.stopMonitoring()
         }
     }
     .menuBarExtraStyle(.window)

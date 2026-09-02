@@ -5,6 +5,8 @@ import Foundation
 final class SystemMonitorViewModel: ObservableObject {
   @Published private(set) var snapshot: SystemSnapshot
   @Published private(set) var isRefreshing = false
+  @Published private(set) var isMonitoring = false
+  @Published private(set) var refreshInterval: MonitoringRefreshInterval
 
   private var monitoringTask: Task<Void, Never>?
   private let cpuProvider: any CPUProviding
@@ -19,7 +21,8 @@ final class SystemMonitorViewModel: ObservableObject {
     networkProvider: any NetworkProviding = NetworkService(),
     diskProvider: any DiskProviding = DiskService(),
     batteryProvider: any BatteryProviding = BatteryService(),
-    initialSnapshot: SystemSnapshot = .empty
+    initialSnapshot: SystemSnapshot = .empty,
+    refreshInterval: MonitoringRefreshInterval = .oneSecond
   ) {
     self.cpuProvider = cpuProvider
     self.memoryProvider = memoryProvider
@@ -27,6 +30,7 @@ final class SystemMonitorViewModel: ObservableObject {
     self.diskProvider = diskProvider
     self.batteryProvider = batteryProvider
     snapshot = initialSnapshot
+    self.refreshInterval = refreshInterval
   }
 
   deinit {
@@ -36,19 +40,45 @@ final class SystemMonitorViewModel: ObservableObject {
   func startMonitoring() {
     guard monitoringTask == nil else { return }
 
-    monitoringTask = Task { [weak self] in
+    isMonitoring = true
+    monitoringTask = makeMonitoringTask(interval: refreshInterval)
+  }
+
+  func stopMonitoring() {
+    monitoringTask?.cancel()
+    monitoringTask = nil
+    isMonitoring = false
+  }
+
+  func changeRefreshInterval(to interval: MonitoringRefreshInterval) {
+    guard refreshInterval != interval else { return }
+
+    refreshInterval = interval
+    guard monitoringTask != nil else { return }
+
+    // Cancellation wakes the old clock sleep immediately. A replacement task
+    // starts with the new cadence, while refresh() prevents sampling overlap.
+    monitoringTask?.cancel()
+    monitoringTask = makeMonitoringTask(interval: interval)
+  }
+
+  private func makeMonitoringTask(
+    interval: MonitoringRefreshInterval
+  ) -> Task<Void, Never> {
+    Task { [weak self] in
       let clock = ContinuousClock()
-      let interval: Duration = .seconds(1)
       var nextSample = clock.now
 
       while !Task.isCancelled {
         await self?.refresh()
-        nextSample = nextSample.advanced(by: interval)
+        guard !Task.isCancelled else { break }
+
+        nextSample = nextSample.advanced(by: interval.duration)
 
         let now = clock.now
         if nextSample <= now {
           // Skip missed deadlines instead of immediately running catch-up samples.
-          nextSample = now.advanced(by: interval)
+          nextSample = now.advanced(by: interval.duration)
         }
 
         do {
@@ -58,11 +88,6 @@ final class SystemMonitorViewModel: ObservableObject {
         }
       }
     }
-  }
-
-  func stopMonitoring() {
-    monitoringTask?.cancel()
-    monitoringTask = nil
   }
 
   func refresh() async {
@@ -78,6 +103,10 @@ final class SystemMonitorViewModel: ObservableObject {
     async let battery = batteryProvider.readBattery()
 
     let values = await (cpuUsage, memory, network, disk, battery)
+
+    // A canceled automatic sample should not publish after monitoring stops or
+    // an interval change replaces its loop.
+    guard !Task.isCancelled else { return }
 
     snapshot = SystemSnapshot(
       timestamp: .now,

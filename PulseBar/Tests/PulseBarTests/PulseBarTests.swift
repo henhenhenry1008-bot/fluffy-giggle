@@ -59,6 +59,46 @@ struct PulseBarTests {
     #expect(viewModel.snapshot.batteryIsACPowered == true)
   }
 
+  @Test("Refresh intervals expose the four supported cadences")
+  func refreshIntervals() {
+    #expect(
+      MonitoringRefreshInterval.allCases.map(\.rawValue)
+        == [0.5, 1, 2, 5])
+    #expect(MonitoringRefreshInterval.halfSecond.duration == .milliseconds(500))
+    #expect(MonitoringRefreshInterval.oneSecond.displayName == "1 second")
+  }
+
+  @Test("Monitoring lifecycle is idempotent and preserves interval changes")
+  @MainActor
+  func monitoringLifecycle() {
+    let viewModel = SystemMonitorViewModel(
+      cpuProvider: PlaceholderCPUService(),
+      memoryProvider: PlaceholderMemoryService(),
+      networkProvider: PlaceholderNetworkService(),
+      diskProvider: PlaceholderDiskService(),
+      batteryProvider: PlaceholderBatteryService()
+    )
+
+    #expect(!viewModel.isMonitoring)
+    #expect(viewModel.refreshInterval == .oneSecond)
+
+    viewModel.startMonitoring()
+    viewModel.startMonitoring()
+    #expect(viewModel.isMonitoring)
+
+    viewModel.changeRefreshInterval(to: .halfSecond)
+    #expect(viewModel.refreshInterval == .halfSecond)
+    #expect(viewModel.isMonitoring)
+
+    viewModel.stopMonitoring()
+    viewModel.stopMonitoring()
+    #expect(!viewModel.isMonitoring)
+
+    viewModel.changeRefreshInterval(to: .fiveSeconds)
+    #expect(viewModel.refreshInterval == .fiveSeconds)
+    #expect(!viewModel.isMonitoring)
+  }
+
   @Test("CPU delta calculation includes user, system, and nice as busy time")
   func cpuDeltaCalculation() {
     let previous = CPUTickSnapshot(user: 100, system: 200, idle: 300, nice: 10)

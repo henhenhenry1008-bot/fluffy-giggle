@@ -282,11 +282,13 @@ struct DashboardView: View {
   }
 
   private var monitoringStatusTitle: String {
-    hasReceivedMetrics ? "LIVE" : "STARTING"
+    guard viewModel.isMonitoring else { return "PAUSED" }
+    return hasReceivedMetrics ? "LIVE" : "STARTING"
   }
 
   private var monitoringStatusTint: Color {
-    hasReceivedMetrics ? .green : .orange
+    guard viewModel.isMonitoring else { return .secondary }
+    return hasReceivedMetrics ? .green : .orange
   }
 
   private func showAboutPanel() {
