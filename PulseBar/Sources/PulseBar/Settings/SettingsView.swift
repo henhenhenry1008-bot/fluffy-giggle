@@ -3,11 +3,6 @@ import SwiftUI
 
 struct SettingsView: View {
   @StateObject private var launchAtLogin = LaunchAtLoginController()
-  @AppStorage(AppPreferenceKey.showsCPU) private var showsCPU = true
-  @AppStorage(AppPreferenceKey.showsMemory) private var showsMemory = true
-  @AppStorage(AppPreferenceKey.showsNetworkDownload) private var showsNetworkDownload = true
-  @AppStorage(AppPreferenceKey.showsNetworkUpload) private var showsNetworkUpload = false
-  @AppStorage(AppPreferenceKey.showsBattery) private var showsBattery = false
   @AppStorage(AppPreferenceKey.refreshInterval) private var refreshIntervalValue =
     MonitoringRefreshInterval.oneSecond.rawValue
   @AppStorage(AppPreferenceKey.historyLength) private var historyLengthValue =
@@ -50,11 +45,9 @@ struct SettingsView: View {
       }
 
       Section("Menu Bar") {
-        Toggle("CPU", isOn: $showsCPU)
-        Toggle("Memory", isOn: $showsMemory)
-        Toggle("Network Download", isOn: $showsNetworkDownload)
-        Toggle("Network Upload", isOn: $showsNetworkUpload)
-        Toggle("Battery", isOn: $showsBattery)
+        ForEach(MenuBarMetric.allCases) { metric in
+          MenuBarMetricToggle(metric: metric)
+        }
       }
 
       Section("Monitoring") {

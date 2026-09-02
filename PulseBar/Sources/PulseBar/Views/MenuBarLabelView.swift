@@ -18,11 +18,18 @@ struct MenuBarLabelView: View {
       networkUnit: networkDisplayUnit
     )
 
-    Text(presentation.title)
-      .lineLimit(1)
-      .fixedSize()
-      .monospacedDigit()
-      .accessibilityLabel(presentation.accessibilityLabel)
+    HStack(spacing: 8) {
+      if presentation.metrics.isEmpty {
+        Text("PulseBar")
+      } else {
+        ForEach(presentation.metrics) { metric in
+          MenuBarMetricView(presentation: metric)
+        }
+      }
+    }
+    .fixedSize()
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(presentation.accessibilityLabel)
   }
 
   private var visibility: MenuBarMetricVisibility {
@@ -41,8 +48,16 @@ struct MenuBarLabelView: View {
 }
 
 struct MenuBarPresentation: Equatable, Sendable {
-  let title: String
-  let accessibilityLabel: String
+  let metrics: [MenuBarMetricPresentation]
+
+  var title: String {
+    metrics.isEmpty ? "PulseBar" : metrics.map(\.title).joined(separator: "  ")
+  }
+
+  var accessibilityLabel: String {
+    metrics.isEmpty
+      ? "PulseBar" : metrics.map(\.accessibilityLabel).joined(separator: ", ")
+  }
 
   init(
     snapshot: SystemSnapshot,
@@ -79,41 +94,18 @@ struct MenuBarPresentation: Equatable, Sendable {
     visibility: MenuBarMetricVisibility = .standard,
     networkUnit: NetworkDisplayUnit = .automatic
   ) {
-    var titleSegments: [String] = []
-    var accessibilitySegments: [String] = []
+    metrics = MenuBarMetric.allCases.compactMap { metric in
+      guard visibility.isVisible(metric) else { return nil }
 
-    if visibility.showsCPU {
-      titleSegments.append("CPU \(MetricFormatter.compactPercentage(cpuUsage))")
-      accessibilitySegments.append("CPU \(MetricFormatter.percentage(cpuUsage))")
-    }
-    if visibility.showsMemory {
-      titleSegments.append("MEM \(MetricFormatter.compactPercentage(memoryUsage))")
-      accessibilitySegments.append("memory \(MetricFormatter.percentage(memoryUsage))")
-    }
-    if visibility.showsNetworkDownload {
-      titleSegments.append(
-        "↓ \(MetricFormatter.compactRate(downloadBytesPerSecond, unit: networkUnit))")
-      accessibilitySegments.append(
-        "download \(MetricFormatter.rate(downloadBytesPerSecond, unit: networkUnit))"
+      return MenuBarMetricPresentation(
+        metric: metric,
+        cpuUsage: cpuUsage,
+        memoryUsage: memoryUsage,
+        downloadBytesPerSecond: downloadBytesPerSecond,
+        uploadBytesPerSecond: uploadBytesPerSecond,
+        batteryPercentage: batteryPercentage,
+        networkUnit: networkUnit
       )
     }
-    if visibility.showsNetworkUpload {
-      titleSegments.append(
-        "↑ \(MetricFormatter.compactRate(uploadBytesPerSecond, unit: networkUnit))")
-      accessibilitySegments.append(
-        "upload \(MetricFormatter.rate(uploadBytesPerSecond, unit: networkUnit))"
-      )
-    }
-    if visibility.showsBattery {
-      titleSegments.append("BAT \(MetricFormatter.compactPercentage(batteryPercentage))")
-      accessibilitySegments.append(
-        "battery \(MetricFormatter.percentage(batteryPercentage))"
-      )
-    }
-
-    title = titleSegments.isEmpty ? "PulseBar" : titleSegments.joined(separator: "  ")
-    accessibilityLabel =
-      accessibilitySegments.isEmpty
-      ? "PulseBar" : accessibilitySegments.joined(separator: ", ")
   }
 }

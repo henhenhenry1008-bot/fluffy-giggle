@@ -33,6 +33,7 @@ struct PulseBarTests {
     )
 
     #expect(presentation.title == "CPU 23%  MEM 51%  ↓ 2.4M")
+    #expect(presentation.metrics.map(\.metric) == [.cpu, .memory, .networkDownload])
     #expect(
       presentation.accessibilityLabel
         == "CPU 23%, memory 51%, download 2.4 MiB/s")
@@ -60,6 +61,7 @@ struct PulseBarTests {
       networkUnit: .bitsPerSecond
     )
     #expect(alternatePresentation.title == "↑ 6.7Mb  BAT 83%")
+    #expect(alternatePresentation.metrics.map(\.metric) == [.networkUpload, .battery])
     #expect(alternatePresentation.accessibilityLabel == "upload 6.7 Mb/s, battery 83%")
 
     let hiddenPresentation = MenuBarPresentation(
@@ -76,6 +78,25 @@ struct PulseBarTests {
     )
     #expect(hiddenPresentation.title == "PulseBar")
     #expect(hiddenPresentation.accessibilityLabel == "PulseBar")
+    #expect(hiddenPresentation.metrics.isEmpty)
+  }
+
+  @Test("Menu bar metrics define stable order, keys, and defaults")
+  func menuBarMetricConfiguration() {
+    #expect(
+      MenuBarMetric.allCases
+        == [.cpu, .memory, .networkDownload, .networkUpload, .battery])
+    #expect(
+      MenuBarMetric.allCases.map(\.settingsTitle)
+        == ["CPU", "Memory", "Network Download", "Network Upload", "Battery"])
+    #expect(Set(MenuBarMetric.allCases.map(\.preferenceKey)).count == 5)
+    #expect(
+      MenuBarMetric.allCases.filter(\.isVisibleByDefault)
+        == [.cpu, .memory, .networkDownload])
+
+    for metric in MenuBarMetric.allCases {
+      #expect(MenuBarMetricVisibility.standard.isVisible(metric) == metric.isVisibleByDefault)
+    }
   }
 
   @Test("View model combines provider readings into one snapshot")

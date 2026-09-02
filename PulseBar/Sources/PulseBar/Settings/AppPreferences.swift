@@ -78,4 +78,14 @@ struct MenuBarMetricVisibility: Equatable, Sendable {
     showsNetworkUpload: false,
     showsBattery: false
   )
+
+  func isVisible(_ metric: MenuBarMetric) -> Bool {
+    switch metric {
+    case .cpu: showsCPU
+    case .memory: showsMemory
+    case .networkDownload: showsNetworkDownload
+    case .networkUpload: showsNetworkUpload
+    case .battery: showsBattery
+    }
+  }
 }
