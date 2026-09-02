@@ -1,6 +1,11 @@
 import Foundation
 
 actor DiskService: DiskProviding {
+  private static let capacityResourceKeys: Set<URLResourceKey> = [
+    .volumeTotalCapacityKey,
+    .volumeAvailableCapacityKey,
+  ]
+
   private let volumeURL: URL
 
   init(volumeURL: URL = URL(fileURLWithPath: "/", isDirectory: true)) {
@@ -8,12 +13,7 @@ actor DiskService: DiskProviding {
   }
 
   func readDisk() async -> DiskReading? {
-    let keys: Set<URLResourceKey> = [
-      .volumeTotalCapacityKey,
-      .volumeAvailableCapacityKey,
-    ]
-
-    guard let values = try? volumeURL.resourceValues(forKeys: keys),
+    guard let values = try? volumeURL.resourceValues(forKeys: Self.capacityResourceKeys),
       let totalCapacity = values.volumeTotalCapacity,
       let availableCapacity = values.volumeAvailableCapacity,
       totalCapacity > 0,

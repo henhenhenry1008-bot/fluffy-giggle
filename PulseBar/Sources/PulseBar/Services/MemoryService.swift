@@ -1,16 +1,25 @@
 import Darwin
 
 actor MemoryService: MemoryProviding {
+  private var cachedConfiguration: MemorySystemConfiguration?
+
   func readMemory() async -> MemoryReading? {
-    guard let totalBytes = Self.readPhysicalMemorySize(),
-      let (statistics, pageSize) = Self.readVMStatistics()
-    else {
-      return nil
+    let configuration: MemorySystemConfiguration
+    if let cachedConfiguration {
+      configuration = cachedConfiguration
+    } else {
+      guard let loadedConfiguration = Self.readSystemConfiguration() else {
+        return nil
+      }
+      cachedConfiguration = loadedConfiguration
+      configuration = loadedConfiguration
     }
 
+    guard let statistics = Self.readVMStatistics() else { return nil }
+
     return Self.makeReading(
-      totalBytes: totalBytes,
-      pageSize: UInt64(pageSize),
+      totalBytes: configuration.totalBytes,
+      pageSize: configuration.pageSize,
       freePages: UInt64(statistics.free_count),
       activePages: UInt64(statistics.active_count),
       inactivePages: UInt64(statistics.inactive_count),
@@ -64,7 +73,9 @@ actor MemoryService: MemoryProviding {
     return result == 0 && totalBytes > 0 ? totalBytes : nil
   }
 
-  private static func readVMStatistics() -> (vm_statistics64_data_t, vm_size_t)? {
+  private static func readSystemConfiguration() -> MemorySystemConfiguration? {
+    guard let totalBytes = readPhysicalMemorySize() else { return nil }
+
     let host = mach_host_self()
     defer { mach_port_deallocate(mach_task_self_, host) }
 
@@ -72,6 +83,16 @@ actor MemoryService: MemoryProviding {
     guard host_page_size(host, &pageSize) == KERN_SUCCESS, pageSize > 0 else {
       return nil
     }
+
+    return MemorySystemConfiguration(
+      totalBytes: totalBytes,
+      pageSize: UInt64(pageSize)
+    )
+  }
+
+  private static func readVMStatistics() -> vm_statistics64_data_t? {
+    let host = mach_host_self()
+    defer { mach_port_deallocate(mach_task_self_, host) }
 
     var statistics = vm_statistics64_data_t()
     var count = mach_msg_type_number_t(
@@ -85,7 +106,7 @@ actor MemoryService: MemoryProviding {
     }
 
     guard result == KERN_SUCCESS else { return nil }
-    return (statistics, pageSize)
+    return statistics
   }
 
   private static func bytes(forPages pages: UInt64, pageSize: UInt64) -> UInt64 {
@@ -97,4 +118,9 @@ actor MemoryService: MemoryProviding {
     let result = lhs.addingReportingOverflow(rhs)
     return result.overflow ? UInt64.max : result.partialValue
   }
+}
+
+private struct MemorySystemConfiguration: Sendable {
+  let totalBytes: UInt64
+  let pageSize: UInt64
 }

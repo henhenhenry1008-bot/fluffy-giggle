@@ -3,6 +3,9 @@ import Foundation
 
 @MainActor
 final class SystemMonitorViewModel: ObservableObject {
+  static let defaultDiskRefreshInterval: TimeInterval = 30
+  static let defaultBatteryRefreshInterval: TimeInterval = 5
+
   @Published private(set) var snapshot: SystemSnapshot
   @Published private(set) var isRefreshing = false
   @Published private(set) var isMonitoring = false
@@ -10,11 +13,18 @@ final class SystemMonitorViewModel: ObservableObject {
   private(set) var history: RingBuffer<SystemSnapshot>
 
   private var monitoringTask: Task<Void, Never>?
+  private var isSampling = false
+  private var hasPendingManualRefresh = false
+  private var diskCache: CachedReading<DiskReading>?
+  private var batteryCache: CachedReading<BatteryReading>?
   private let cpuProvider: any CPUProviding
   private let memoryProvider: any MemoryProviding
   private let networkProvider: any NetworkProviding
   private let diskProvider: any DiskProviding
   private let batteryProvider: any BatteryProviding
+  private let now: () -> Date
+  private let diskRefreshInterval: TimeInterval
+  private let batteryRefreshInterval: TimeInterval
 
   init(
     cpuProvider: any CPUProviding = CPUService(),
@@ -24,7 +34,10 @@ final class SystemMonitorViewModel: ObservableObject {
     batteryProvider: any BatteryProviding = BatteryService(),
     initialSnapshot: SystemSnapshot = .empty,
     refreshInterval: MonitoringRefreshInterval = .oneSecond,
-    historyCapacity: Int = 120
+    historyCapacity: Int = 120,
+    diskRefreshInterval: TimeInterval = defaultDiskRefreshInterval,
+    batteryRefreshInterval: TimeInterval = defaultBatteryRefreshInterval,
+    now: @escaping () -> Date = { .now }
   ) {
     self.cpuProvider = cpuProvider
     self.memoryProvider = memoryProvider
@@ -34,6 +47,9 @@ final class SystemMonitorViewModel: ObservableObject {
     snapshot = initialSnapshot
     self.refreshInterval = refreshInterval
     history = RingBuffer(capacity: historyCapacity)
+    self.diskRefreshInterval = Swift.max(diskRefreshInterval, 0)
+    self.batteryRefreshInterval = Swift.max(batteryRefreshInterval, 0)
+    self.now = now
   }
 
   deinit {
@@ -60,7 +76,7 @@ final class SystemMonitorViewModel: ObservableObject {
     guard monitoringTask != nil else { return }
 
     // Cancellation wakes the old clock sleep immediately. A replacement task
-    // starts with the new cadence, while refresh() prevents sampling overlap.
+    // starts with the new cadence, while the sampling guard prevents overlap.
     monitoringTask?.cancel()
     monitoringTask = makeMonitoringTask(interval: interval)
   }
@@ -81,7 +97,7 @@ final class SystemMonitorViewModel: ObservableObject {
       var nextSample = clock.now
 
       while !Task.isCancelled {
-        await self?.refresh()
+        await self?.refreshForMonitoring()
         guard !Task.isCancelled else { break }
 
         nextSample = nextSample.advanced(by: interval.duration)
@@ -102,25 +118,92 @@ final class SystemMonitorViewModel: ObservableObject {
   }
 
   func refresh() async {
-    guard !isRefreshing else { return }
+    guard !isSampling else {
+      // Coalesce clicks that arrive during a sample, then force every metric
+      // once the in-flight work has finished.
+      hasPendingManualRefresh = true
+      return
+    }
 
-    isRefreshing = true
-    defer { isRefreshing = false }
+    await performRefresh(reportsActivity: true, refreshesSlowMetrics: true)
+  }
+
+  func refreshForMonitoring() async {
+    await performRefresh(reportsActivity: false, refreshesSlowMetrics: false)
+  }
+
+  private func performRefresh(
+    reportsActivity: Bool,
+    refreshesSlowMetrics: Bool
+  ) async {
+    guard !isSampling else { return }
+
+    isSampling = true
+    if reportsActivity {
+      isRefreshing = true
+    }
+    defer {
+      if reportsActivity {
+        isRefreshing = false
+      }
+      isSampling = false
+
+      if hasPendingManualRefresh {
+        hasPendingManualRefresh = false
+        Task { [weak self] in
+          await self?.refresh()
+        }
+      }
+    }
+
+    let sampleTime = now()
+    let refreshesDisk =
+      refreshesSlowMetrics
+      || Self.shouldRefresh(
+        lastRefresh: diskCache?.timestamp,
+        at: sampleTime,
+        minimumInterval: diskRefreshInterval
+      )
+    let refreshesBattery =
+      refreshesSlowMetrics
+      || Self.shouldRefresh(
+        lastRefresh: batteryCache?.timestamp,
+        at: sampleTime,
+        minimumInterval: batteryRefreshInterval
+      )
 
     async let cpuUsage = cpuProvider.readCPUUsage()
     async let memory = memoryProvider.readMemory()
     async let network = networkProvider.readNetwork()
-    async let disk = diskProvider.readDisk()
-    async let battery = batteryProvider.readBattery()
 
-    let values = await (cpuUsage, memory, network, disk, battery)
+    var disk = diskCache?.value
+    var battery = batteryCache?.value
+
+    if refreshesDisk, refreshesBattery {
+      async let updatedDisk = diskProvider.readDisk()
+      async let updatedBattery = batteryProvider.readBattery()
+      (disk, battery) = await (updatedDisk, updatedBattery)
+    } else if refreshesDisk {
+      disk = await diskProvider.readDisk()
+    } else if refreshesBattery {
+      battery = await batteryProvider.readBattery()
+    }
+
+    let values = await (cpuUsage, memory, network)
 
     // A canceled automatic sample should not publish after monitoring stops or
     // an interval change replaces its loop.
     guard !Task.isCancelled else { return }
 
+    if refreshesDisk {
+      diskCache = CachedReading(value: disk, timestamp: sampleTime)
+    }
+    if refreshesBattery {
+      batteryCache = CachedReading(value: battery, timestamp: sampleTime)
+    }
+
     let nextSnapshot = SystemSnapshot(
-      timestamp: .now,
+      timestamp: sampleTime,
       cpuUsage: values.0,
       memoryUsed: values.1?.usedBytes,
       memoryTotal: values.1?.totalBytes,
@@ -133,16 +216,32 @@ final class SystemMonitorViewModel: ObservableObject {
       memoryPurgeable: values.1?.purgeableBytes,
       networkDownloadBytesPerSecond: values.2?.downloadBytesPerSecond,
       networkUploadBytesPerSecond: values.2?.uploadBytesPerSecond,
-      diskUsed: values.3?.usedBytes,
-      diskTotal: values.3?.totalBytes,
-      diskAvailable: values.3?.availableBytes,
-      batteryPercentage: values.4?.percentage,
-      batteryIsCharging: values.4?.isCharging,
-      batteryIsFullyCharged: values.4?.isFullyCharged,
-      batteryIsACPowered: values.4?.isACPowered
+      diskUsed: disk?.usedBytes,
+      diskTotal: disk?.totalBytes,
+      diskAvailable: disk?.availableBytes,
+      batteryPercentage: battery?.percentage,
+      batteryIsCharging: battery?.isCharging,
+      batteryIsFullyCharged: battery?.isFullyCharged,
+      batteryIsACPowered: battery?.isACPowered
     )
 
     history.append(nextSnapshot)
     snapshot = nextSnapshot
   }
+
+  nonisolated static func shouldRefresh(
+    lastRefresh: Date?,
+    at currentDate: Date,
+    minimumInterval: TimeInterval
+  ) -> Bool {
+    guard minimumInterval > 0, let lastRefresh else { return true }
+
+    let elapsed = currentDate.timeIntervalSince(lastRefresh)
+    return elapsed < 0 || elapsed >= minimumInterval
+  }
+}
+
+private struct CachedReading<Value: Sendable>: Sendable {
+  let value: Value?
+  let timestamp: Date
 }

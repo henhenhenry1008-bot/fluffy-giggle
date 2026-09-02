@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import Testing
 
@@ -283,6 +284,126 @@ struct PulseBarTests {
     #expect(!viewModel.isMonitoring)
   }
 
+  @Test("Automatic sampling publishes one consolidated UI update")
+  @MainActor
+  func consolidatedAutomaticUpdate() async {
+    let viewModel = SystemMonitorViewModel(
+      cpuProvider: PlaceholderCPUService(),
+      memoryProvider: PlaceholderMemoryService(),
+      networkProvider: PlaceholderNetworkService(),
+      diskProvider: PlaceholderDiskService(),
+      batteryProvider: PlaceholderBatteryService()
+    )
+    var updateCount = 0
+    let observation = viewModel.objectWillChange.sink {
+      updateCount += 1
+    }
+
+    await viewModel.refreshForMonitoring()
+
+    #expect(updateCount == 1)
+    #expect(!viewModel.isRefreshing)
+    withExtendedLifetime(observation) {}
+  }
+
+  @Test("Manual refresh requested during automatic sampling is coalesced")
+  @MainActor
+  func queuedManualRefresh() async {
+    let cpuProvider = FirstReadGateCPUProvider()
+    let slowMetricProvider = CountingSlowMetricProvider()
+    let viewModel = SystemMonitorViewModel(
+      cpuProvider: cpuProvider,
+      memoryProvider: PlaceholderMemoryService(),
+      networkProvider: PlaceholderNetworkService(),
+      diskProvider: slowMetricProvider,
+      batteryProvider: slowMetricProvider
+    )
+
+    let automaticSample = Task {
+      await viewModel.refreshForMonitoring()
+    }
+    await cpuProvider.waitUntilFirstReadStarts()
+
+    await viewModel.refresh()
+    await cpuProvider.resumeFirstRead()
+    await automaticSample.value
+
+    for _ in 0..<100 where await slowMetricProvider.callCounts().disk < 2 {
+      await Task.yield()
+    }
+
+    let counts = await slowMetricProvider.callCounts()
+    #expect(counts.disk == 2)
+    #expect(counts.battery == 2)
+  }
+
+  @Test("Automatic sampling throttles slow metrics and manual refresh bypasses caches")
+  @MainActor
+  func slowMetricCadence() async {
+    let dateSource = TestDateSource(currentDate: Date(timeIntervalSince1970: 1_000))
+    let slowMetricProvider = CountingSlowMetricProvider()
+    let viewModel = SystemMonitorViewModel(
+      cpuProvider: PlaceholderCPUService(),
+      memoryProvider: PlaceholderMemoryService(),
+      networkProvider: PlaceholderNetworkService(),
+      diskProvider: slowMetricProvider,
+      batteryProvider: slowMetricProvider,
+      now: { dateSource.currentDate }
+    )
+
+    await viewModel.refreshForMonitoring()
+    var counts = await slowMetricProvider.callCounts()
+    #expect(counts.disk == 1)
+    #expect(counts.battery == 1)
+
+    dateSource.advance(by: 1)
+    await viewModel.refreshForMonitoring()
+    counts = await slowMetricProvider.callCounts()
+    #expect(counts.disk == 1)
+    #expect(counts.battery == 1)
+
+    dateSource.advance(by: 4)
+    await viewModel.refreshForMonitoring()
+    counts = await slowMetricProvider.callCounts()
+    #expect(counts.disk == 1)
+    #expect(counts.battery == 2)
+
+    dateSource.advance(by: 25)
+    await viewModel.refreshForMonitoring()
+    counts = await slowMetricProvider.callCounts()
+    #expect(counts.disk == 2)
+    #expect(counts.battery == 3)
+
+    await viewModel.refresh()
+    counts = await slowMetricProvider.callCounts()
+    #expect(counts.disk == 3)
+    #expect(counts.battery == 4)
+  }
+
+  @Test("Slow metric cadence refreshes after wall-clock changes")
+  func slowMetricClockChanges() {
+    let lastRefresh = Date(timeIntervalSince1970: 100)
+
+    #expect(
+      !SystemMonitorViewModel.shouldRefresh(
+        lastRefresh: lastRefresh,
+        at: Date(timeIntervalSince1970: 104),
+        minimumInterval: 5
+      ))
+    #expect(
+      SystemMonitorViewModel.shouldRefresh(
+        lastRefresh: lastRefresh,
+        at: Date(timeIntervalSince1970: 105),
+        minimumInterval: 5
+      ))
+    #expect(
+      SystemMonitorViewModel.shouldRefresh(
+        lastRefresh: lastRefresh,
+        at: Date(timeIntervalSince1970: 90),
+        minimumInterval: 5
+      ))
+  }
+
   @Test("CPU delta calculation includes user, system, and nice as busy time")
   func cpuDeltaCalculation() {
     let previous = CPUTickSnapshot(user: 100, system: 200, idle: 300, nice: 10)
@@ -531,5 +652,67 @@ private final class MockLaunchAtLoginService: LaunchAtLoginServicing {
 private struct StubLaunchAtLoginError: LocalizedError {
   var errorDescription: String? {
     "Registration failed"
+  }
+}
+
+@MainActor
+private final class TestDateSource {
+  private(set) var currentDate: Date
+
+  init(currentDate: Date) {
+    self.currentDate = currentDate
+  }
+
+  func advance(by interval: TimeInterval) {
+    currentDate.addTimeInterval(interval)
+  }
+}
+
+private actor CountingSlowMetricProvider: DiskProviding, BatteryProviding {
+  private var diskCallCount = 0
+  private var batteryCallCount = 0
+
+  func readDisk() async -> DiskReading? {
+    diskCallCount += 1
+    return DiskReading(
+      usedBytes: 400,
+      totalBytes: 1_000,
+      availableBytes: 600
+    )
+  }
+
+  func readBattery() async -> BatteryReading? {
+    batteryCallCount += 1
+    return nil
+  }
+
+  func callCounts() -> (disk: Int, battery: Int) {
+    (diskCallCount, batteryCallCount)
+  }
+}
+
+private actor FirstReadGateCPUProvider: CPUProviding {
+  private var firstReadContinuation: CheckedContinuation<Void, Never>?
+  private var readCount = 0
+
+  func readCPUUsage() async -> Double? {
+    readCount += 1
+    if readCount == 1 {
+      await withCheckedContinuation { continuation in
+        firstReadContinuation = continuation
+      }
+    }
+    return 0.5
+  }
+
+  func waitUntilFirstReadStarts() async {
+    while readCount == 0 {
+      await Task.yield()
+    }
+  }
+
+  func resumeFirstRead() {
+    firstReadContinuation?.resume()
+    firstReadContinuation = nil
   }
 }

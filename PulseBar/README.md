@@ -12,6 +12,10 @@ The data flow is:
 Monitoring services -> SystemMonitorViewModel -> SystemSnapshot -> SwiftUI
 ```
 
+Automatic sampling keeps CPU, memory, and network readings at the selected refresh interval. Disk capacity is refreshed at most every 30 seconds and battery state every 5 seconds, while a manual refresh updates every metric. Static memory configuration is cached after its first successful read, history storage remains bounded, and automatic samples publish one consolidated snapshot update to SwiftUI.
+
+The Phase 14 optimization notes and remaining runtime profiling work are recorded in `PERFORMANCE.md`.
+
 ## Build and test
 
 ```bash
