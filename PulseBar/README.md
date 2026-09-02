@@ -16,6 +16,8 @@ Automatic sampling keeps CPU, memory, and network readings at the selected refre
 
 The Phase 14 optimization notes and remaining runtime profiling work are recorded in `PERFORMANCE.md`.
 
+The Phase 15 full-project correctness review is recorded in `AUDIT.md`.
+
 ## Build and test
 
 ```bash

@@ -66,9 +66,15 @@ actor NetworkService: NetworkProviding {
       }
     }
 
+    let downloadBytesPerSecond = Double(receivedDelta) / elapsedSeconds
+    let uploadBytesPerSecond = Double(sentDelta) / elapsedSeconds
+    guard downloadBytesPerSecond.isFinite, uploadBytesPerSecond.isFinite else {
+      return nil
+    }
+
     return NetworkReading(
-      downloadBytesPerSecond: Double(receivedDelta) / elapsedSeconds,
-      uploadBytesPerSecond: Double(sentDelta) / elapsedSeconds
+      downloadBytesPerSecond: downloadBytesPerSecond,
+      uploadBytesPerSecond: uploadBytesPerSecond
     )
   }
 

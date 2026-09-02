@@ -29,10 +29,14 @@ actor CPUService: CPUProviding {
     previous: CPUTickSnapshot,
     current: CPUTickSnapshot
   ) -> Double? {
-    let user = tickDelta(previous: previous.user, current: current.user)
-    let system = tickDelta(previous: previous.system, current: current.system)
-    let idle = tickDelta(previous: previous.idle, current: current.idle)
-    let nice = tickDelta(previous: previous.nice, current: current.nice)
+    guard
+      let user = tickDelta(previous: previous.user, current: current.user),
+      let system = tickDelta(previous: previous.system, current: current.system),
+      let idle = tickDelta(previous: previous.idle, current: current.idle),
+      let nice = tickDelta(previous: previous.nice, current: current.nice)
+    else {
+      return nil
+    }
 
     let busy = user + system + nice
     let total = busy + idle
@@ -75,13 +79,18 @@ actor CPUService: CPUProviding {
     )
   }
 
-  private static func tickDelta(previous: UInt64, current: UInt64) -> UInt64 {
+  private static func tickDelta(previous: UInt64, current: UInt64) -> UInt64? {
+    let maximumTick = UInt64(UInt32.max)
+    guard previous <= maximumTick, current <= maximumTick else {
+      return nil
+    }
+
     if current >= previous {
       return current - previous
     }
 
     // Mach exposes natural_t counters. Account for a UInt32 wrap instead of
     // producing a negative or implausibly large utilization value.
-    return UInt64(UInt32.max) - previous + current + 1
+    return maximumTick - previous + current + 1
   }
 }

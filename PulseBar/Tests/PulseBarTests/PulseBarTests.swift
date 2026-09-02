@@ -422,6 +422,28 @@ struct PulseBarTests {
     #expect(CPUService.calculateUsage(previous: sample, current: sample) == nil)
   }
 
+  @Test("CPU delta calculation handles counter wrap and rejects malformed counters")
+  func cpuCounterBoundaries() {
+    let maximumTick = UInt64(UInt32.max)
+    let previous = CPUTickSnapshot(
+      user: maximumTick - 4,
+      system: 200,
+      idle: 300,
+      nice: 10
+    )
+    let current = CPUTickSnapshot(user: 5, system: 200, idle: 310, nice: 10)
+
+    #expect(CPUService.calculateUsage(previous: previous, current: current) == 0.5)
+
+    let malformed = CPUTickSnapshot(
+      user: maximumTick + 1,
+      system: 200,
+      idle: 300,
+      nice: 10
+    )
+    #expect(CPUService.calculateUsage(previous: malformed, current: current) == nil)
+  }
+
   @Test("CPU service reads a normalized system-wide measurement")
   func liveCPUReading() async throws {
     let service = CPUService()
@@ -516,6 +538,24 @@ struct PulseBarTests {
 
     #expect(
       NetworkService.makeReading(previous: counters, current: counters, elapsedSeconds: 0) == nil
+    )
+  }
+
+  @Test("Network rate calculation rejects non-finite results")
+  func overflowingNetworkRate() {
+    let previous: NetworkCounterSnapshot = [
+      1: NetworkInterfaceCounters(receivedBytes: 0, sentBytes: 0)
+    ]
+    let current: NetworkCounterSnapshot = [
+      1: NetworkInterfaceCounters(receivedBytes: .max, sentBytes: .max)
+    ]
+
+    #expect(
+      NetworkService.makeReading(
+        previous: previous,
+        current: current,
+        elapsedSeconds: .leastNonzeroMagnitude
+      ) == nil
     )
   }
 
