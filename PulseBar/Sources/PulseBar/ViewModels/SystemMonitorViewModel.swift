@@ -65,6 +65,14 @@ final class SystemMonitorViewModel: ObservableObject {
     monitoringTask = makeMonitoringTask(interval: interval)
   }
 
+  func changeHistoryCapacity(to capacity: Int) {
+    let normalizedCapacity = Swift.max(capacity, 0)
+    guard history.capacity != normalizedCapacity else { return }
+
+    objectWillChange.send()
+    history.resize(to: normalizedCapacity)
+  }
+
   private func makeMonitoringTask(
     interval: MonitoringRefreshInterval
   ) -> Task<Void, Never> {

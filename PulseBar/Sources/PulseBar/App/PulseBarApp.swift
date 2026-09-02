@@ -4,14 +4,33 @@ import SwiftUI
 @main
 struct PulseBarApp: App {
   @StateObject private var monitor = SystemMonitorViewModel()
+  @AppStorage(AppPreferenceKey.refreshInterval) private var refreshIntervalValue =
+    MonitoringRefreshInterval.oneSecond.rawValue
+  @AppStorage(AppPreferenceKey.historyLength) private var historyLengthValue =
+    MonitoringHistoryLength.twoMinutes.rawValue
+  @AppStorage(AppPreferenceKey.appearance) private var appearanceValue =
+    AppearancePreference.system.rawValue
 
   var body: some Scene {
     MenuBarExtra {
       DashboardView(viewModel: monitor)
+        .preferredColorScheme(appearancePreference.colorScheme)
     } label: {
       MenuBarLabelView(snapshot: monitor.snapshot)
         .onAppear {
+          applyStoredMonitoringPreferences()
           monitor.startMonitoring()
+        }
+        .onChange(of: refreshIntervalValue) { _, newValue in
+          let interval =
+            MonitoringRefreshInterval(rawValue: newValue) ?? .oneSecond
+          monitor.changeRefreshInterval(to: interval)
+        }
+        .onChange(of: historyLengthValue) { _, newValue in
+          let capacity =
+            MonitoringHistoryLength(rawValue: newValue)?.rawValue
+            ?? MonitoringHistoryLength.twoMinutes.rawValue
+          monitor.changeHistoryCapacity(to: capacity)
         }
         .onReceive(
           NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)
@@ -23,6 +42,22 @@ struct PulseBarApp: App {
 
     Settings {
       SettingsView()
+        .preferredColorScheme(appearancePreference.colorScheme)
     }
+  }
+
+  private var appearancePreference: AppearancePreference {
+    AppearancePreference(rawValue: appearanceValue) ?? .system
+  }
+
+  private func applyStoredMonitoringPreferences() {
+    let interval =
+      MonitoringRefreshInterval(rawValue: refreshIntervalValue) ?? .oneSecond
+    let historyCapacity =
+      MonitoringHistoryLength(rawValue: historyLengthValue)?.rawValue
+      ?? MonitoringHistoryLength.twoMinutes.rawValue
+
+    monitor.changeRefreshInterval(to: interval)
+    monitor.changeHistoryCapacity(to: historyCapacity)
   }
 }

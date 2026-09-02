@@ -16,42 +16,94 @@ enum MetricFormatter {
     return scaledBytes(Double(bytes))
   }
 
-  static func rate(_ bytesPerSecond: Double?) -> String {
+  static func rate(
+    _ bytesPerSecond: Double?,
+    unit: NetworkDisplayUnit = .automatic
+  ) -> String {
     guard let bytesPerSecond, bytesPerSecond.isFinite, bytesPerSecond >= 0 else {
       return "Unavailable"
     }
-    return "\(scaledBytes(bytesPerSecond))/s"
+
+    switch unit {
+    case .automatic:
+      return "\(scaledBytes(bytesPerSecond))/s"
+    case .bytesPerSecond:
+      return
+        "\(scaledValue(bytesPerSecond, divisor: 1_000, units: ["B", "KB", "MB", "GB", "TB"], separator: " "))/s"
+    case .bitsPerSecond:
+      guard let bitsPerSecond = bitsPerSecond(from: bytesPerSecond) else {
+        return "Unavailable"
+      }
+      return
+        "\(scaledValue(bitsPerSecond, divisor: 1_000, units: ["b", "Kb", "Mb", "Gb", "Tb"], separator: " "))/s"
+    }
   }
 
-  static func compactRate(_ bytesPerSecond: Double?) -> String {
+  static func compactRate(
+    _ bytesPerSecond: Double?,
+    unit: NetworkDisplayUnit = .automatic
+  ) -> String {
     guard let bytesPerSecond, bytesPerSecond.isFinite, bytesPerSecond >= 0 else {
       return "—"
     }
 
-    let units = ["B", "K", "M", "G", "T"]
-    var value = bytesPerSecond
-    var unitIndex = 0
-
-    while value >= 1_024, unitIndex < units.count - 1 {
-      value /= 1_024
-      unitIndex += 1
+    switch unit {
+    case .automatic:
+      return scaledValue(
+        bytesPerSecond,
+        divisor: 1_024,
+        units: ["B", "K", "M", "G", "T"],
+        separator: ""
+      )
+    case .bytesPerSecond:
+      return scaledValue(
+        bytesPerSecond,
+        divisor: 1_000,
+        units: ["B", "KB", "MB", "GB", "TB"],
+        separator: ""
+      )
+    case .bitsPerSecond:
+      guard let bitsPerSecond = bitsPerSecond(from: bytesPerSecond) else {
+        return "—"
+      }
+      return scaledValue(
+        bitsPerSecond,
+        divisor: 1_000,
+        units: ["b", "Kb", "Mb", "Gb", "Tb"],
+        separator: ""
+      )
     }
+  }
 
-    let decimals = value >= 10 || unitIndex == 0 ? 0 : 1
-    return "\(String(format: "%.*f", decimals, value))\(units[unitIndex])"
+  private static func bitsPerSecond(from bytesPerSecond: Double) -> Double? {
+    guard bytesPerSecond <= Double.greatestFiniteMagnitude / 8 else { return nil }
+    return bytesPerSecond * 8
   }
 
   private static func scaledBytes(_ bytes: Double) -> String {
-    let units = ["B", "KiB", "MiB", "GiB", "TiB"]
-    var value = max(bytes, 0)
+    scaledValue(
+      bytes,
+      divisor: 1_024,
+      units: ["B", "KiB", "MiB", "GiB", "TiB"],
+      separator: " "
+    )
+  }
+
+  private static func scaledValue(
+    _ rawValue: Double,
+    divisor: Double,
+    units: [String],
+    separator: String
+  ) -> String {
+    var value = max(rawValue, 0)
     var unitIndex = 0
 
-    while value >= 1_024, unitIndex < units.count - 1 {
-      value /= 1_024
+    while value >= divisor, unitIndex < units.count - 1 {
+      value /= divisor
       unitIndex += 1
     }
 
     let decimals = value >= 10 || unitIndex == 0 ? 0 : 1
-    return "\(String(format: "%.*f", decimals, value)) \(units[unitIndex])"
+    return "\(String(format: "%.*f", decimals, value))\(separator)\(units[unitIndex])"
   }
 }

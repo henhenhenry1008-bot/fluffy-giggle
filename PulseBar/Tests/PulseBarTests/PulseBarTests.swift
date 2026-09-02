@@ -9,9 +9,18 @@ struct PulseBarTests {
     #expect(MetricFormatter.percentage(0.32) == "32%")
     #expect(MetricFormatter.bytes(18 * 1_024 * 1_024 * 1_024) == "18 GiB")
     #expect(MetricFormatter.rate(2.4 * 1_024 * 1_024) == "2.4 MiB/s")
+    #expect(
+      MetricFormatter.rate(2.4 * 1_024 * 1_024, unit: .bytesPerSecond) == "2.5 MB/s")
+    #expect(MetricFormatter.rate(2.4 * 1_024 * 1_024, unit: .bitsPerSecond) == "20 Mb/s")
     #expect(MetricFormatter.percentage(nil) == "Unavailable")
     #expect(MetricFormatter.compactPercentage(nil) == "—")
     #expect(MetricFormatter.compactRate(2.4 * 1_024 * 1_024) == "2.4M")
+    #expect(
+      MetricFormatter.rate(Double.greatestFiniteMagnitude, unit: .bitsPerSecond)
+        == "Unavailable")
+    #expect(
+      MetricFormatter.compactRate(Double.greatestFiniteMagnitude, unit: .bitsPerSecond)
+        == "—")
   }
 
   @Test("Menu bar presentation is compact and includes download throughput")
@@ -33,6 +42,39 @@ struct PulseBarTests {
       downloadBytesPerSecond: nil
     )
     #expect(unavailablePresentation.title == "CPU —  MEM —  ↓ —")
+
+    let alternatePresentation = MenuBarPresentation(
+      cpuUsage: 0.23,
+      memoryUsage: 0.51,
+      downloadBytesPerSecond: 2.4 * 1_024 * 1_024,
+      uploadBytesPerSecond: 820 * 1_024,
+      batteryPercentage: 0.83,
+      visibility: MenuBarMetricVisibility(
+        showsCPU: false,
+        showsMemory: false,
+        showsNetworkDownload: false,
+        showsNetworkUpload: true,
+        showsBattery: true
+      ),
+      networkUnit: .bitsPerSecond
+    )
+    #expect(alternatePresentation.title == "↑ 6.7Mb  BAT 83%")
+    #expect(alternatePresentation.accessibilityLabel == "upload 6.7 Mb/s, battery 83%")
+
+    let hiddenPresentation = MenuBarPresentation(
+      cpuUsage: 0.23,
+      memoryUsage: 0.51,
+      downloadBytesPerSecond: 2.4 * 1_024 * 1_024,
+      visibility: MenuBarMetricVisibility(
+        showsCPU: false,
+        showsMemory: false,
+        showsNetworkDownload: false,
+        showsNetworkUpload: false,
+        showsBattery: false
+      )
+    )
+    #expect(hiddenPresentation.title == "PulseBar")
+    #expect(hiddenPresentation.accessibilityLabel == "PulseBar")
   }
 
   @Test("View model combines provider readings into one snapshot")
@@ -72,6 +114,12 @@ struct PulseBarTests {
     #expect(buffer.count == 3)
     #expect(buffer.capacity == 3)
 
+    buffer.resize(to: 2)
+    #expect(Array(buffer) == [4, 5])
+    buffer.resize(to: 5)
+    buffer.append(6)
+    #expect(Array(buffer) == [4, 5, 6])
+
     var zeroCapacityBuffer = RingBuffer<Int>(capacity: 0)
     zeroCapacityBuffer.append(1)
     #expect(zeroCapacityBuffer.isEmpty)
@@ -95,6 +143,17 @@ struct PulseBarTests {
 
     #expect(viewModel.history.count == 2)
     #expect(viewModel.history.last == viewModel.snapshot)
+
+    viewModel.changeHistoryCapacity(to: 1)
+    #expect(viewModel.history.count == 1)
+    #expect(viewModel.history.last == viewModel.snapshot)
+  }
+
+  @Test("Preference options expose stable persisted values")
+  func preferenceOptions() {
+    #expect(MonitoringHistoryLength.allCases.map(\.rawValue) == [60, 120, 300])
+    #expect(NetworkDisplayUnit.bitsPerSecond.rawValue == "bitsPerSecond")
+    #expect(AppearancePreference.dark.colorScheme == .dark)
   }
 
   @Test("Refresh intervals expose the four supported cadences")

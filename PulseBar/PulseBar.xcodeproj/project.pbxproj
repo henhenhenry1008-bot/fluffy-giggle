@@ -27,6 +27,7 @@
 		200000000000000000000018 /* MonitoringRefreshInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000022 /* MonitoringRefreshInterval.swift */; };
 		200000000000000000000019 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000023 /* RingBuffer.swift */; };
 		200000000000000000000020 /* MetricChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000024 /* MetricChart.swift */; };
+		200000000000000000000021 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000025 /* AppPreferences.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +65,7 @@
 		100000000000000000000022 /* MonitoringRefreshInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/MonitoringRefreshInterval.swift; sourceTree = "<group>"; };
 		100000000000000000000023 /* RingBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/RingBuffer.swift; sourceTree = "<group>"; };
 		100000000000000000000024 /* MetricChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/MetricChart.swift; sourceTree = "<group>"; };
+		100000000000000000000025 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/AppPreferences.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -117,6 +119,7 @@
 				100000000000000000000021 /* BatteryService.swift */,
 				100000000000000000000005 /* MonitoringProtocols.swift */,
 				100000000000000000000006 /* PlaceholderMonitoringServices.swift */,
+				100000000000000000000025 /* AppPreferences.swift */,
 				100000000000000000000007 /* SettingsView.swift */,
 				100000000000000000000008 /* MetricFormatter.swift */,
 				100000000000000000000023 /* RingBuffer.swift */,
@@ -258,6 +261,7 @@
 				200000000000000000000017 /* BatteryService.swift in Sources */,
 				200000000000000000000005 /* MonitoringProtocols.swift in Sources */,
 				200000000000000000000006 /* PlaceholderMonitoringServices.swift in Sources */,
+				200000000000000000000021 /* AppPreferences.swift in Sources */,
 				200000000000000000000007 /* SettingsView.swift in Sources */,
 				200000000000000000000008 /* MetricFormatter.swift in Sources */,
 				200000000000000000000019 /* RingBuffer.swift in Sources */,

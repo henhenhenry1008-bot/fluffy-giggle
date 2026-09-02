@@ -3,6 +3,8 @@ import SwiftUI
 
 struct DashboardView: View {
   @ObservedObject var viewModel: SystemMonitorViewModel
+  @AppStorage(AppPreferenceKey.networkDisplayUnit) private var networkDisplayUnitValue =
+    NetworkDisplayUnit.automatic.rawValue
 
   private let columns = [
     GridItem(.flexible(), spacing: 10),
@@ -242,7 +244,7 @@ struct DashboardView: View {
         Text(title)
           .font(.caption2)
           .foregroundStyle(.secondary)
-        Text(MetricFormatter.rate(value))
+        Text(MetricFormatter.rate(value, unit: networkDisplayUnit))
           .font(.body.weight(.medium))
           .monospacedDigit()
       }
@@ -271,6 +273,10 @@ struct DashboardView: View {
       return nil
     }
     return Double(used) / Double(total)
+  }
+
+  private var networkDisplayUnit: NetworkDisplayUnit {
+    NetworkDisplayUnit(rawValue: networkDisplayUnitValue) ?? .automatic
   }
 
   private var batteryState: String {
