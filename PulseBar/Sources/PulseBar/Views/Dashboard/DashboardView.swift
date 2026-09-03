@@ -94,9 +94,7 @@ struct DashboardView: View {
       )
       .frame(height: 40)
 
-      Text("Total system usage")
-        .font(.caption2)
-        .foregroundStyle(.secondary)
+      CoreUsageStrip(usages: viewModel.snapshot.cpuCoreUsages)
     }
   }
 

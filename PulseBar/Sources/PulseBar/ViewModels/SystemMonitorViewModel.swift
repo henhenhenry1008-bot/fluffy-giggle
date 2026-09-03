@@ -18,6 +18,7 @@ final class SystemMonitorViewModel: ObservableObject {
   private var diskCache: CachedReading<DiskReading>?
   private var batteryCache: CachedReading<BatteryReading>?
   private let cpuProvider: any CPUProviding
+  private let perCoreCPUProvider: any PerCoreCPUProviding
   private let memoryProvider: any MemoryProviding
   private let networkProvider: any NetworkProviding
   private let diskProvider: any DiskProviding
@@ -28,6 +29,7 @@ final class SystemMonitorViewModel: ObservableObject {
 
   init(
     cpuProvider: any CPUProviding = CPUService(),
+    perCoreCPUProvider: any PerCoreCPUProviding = PerCoreCPUService(),
     memoryProvider: any MemoryProviding = MemoryService(),
     networkProvider: any NetworkProviding = NetworkService(),
     diskProvider: any DiskProviding = DiskService(),
@@ -40,6 +42,7 @@ final class SystemMonitorViewModel: ObservableObject {
     now: @escaping () -> Date = { .now }
   ) {
     self.cpuProvider = cpuProvider
+    self.perCoreCPUProvider = perCoreCPUProvider
     self.memoryProvider = memoryProvider
     self.networkProvider = networkProvider
     self.diskProvider = diskProvider
@@ -173,6 +176,7 @@ final class SystemMonitorViewModel: ObservableObject {
       )
 
     async let cpuUsage = cpuProvider.readCPUUsage()
+    async let cpuCoreUsages = perCoreCPUProvider.readPerCoreCPUUsage()
     async let memory = memoryProvider.readMemory()
     async let network = networkProvider.readNetwork()
 
@@ -189,7 +193,8 @@ final class SystemMonitorViewModel: ObservableObject {
       battery = await batteryProvider.readBattery()
     }
 
-    let values = await (cpuUsage, memory, network)
+    let (latestCPUUsage, latestCoreUsages, latestMemory, latestNetwork) =
+      await (cpuUsage, cpuCoreUsages, memory, network)
 
     // A canceled automatic sample should not publish after monitoring stops or
     // an interval change replaces its loop.
@@ -204,18 +209,19 @@ final class SystemMonitorViewModel: ObservableObject {
 
     let nextSnapshot = SystemSnapshot(
       timestamp: sampleTime,
-      cpuUsage: values.0,
-      memoryUsed: values.1?.usedBytes,
-      memoryTotal: values.1?.totalBytes,
-      memoryAvailable: values.1?.availableBytes,
-      memoryFree: values.1?.freeBytes,
-      memoryActive: values.1?.activeBytes,
-      memoryInactive: values.1?.inactiveBytes,
-      memoryWired: values.1?.wiredBytes,
-      memoryCompressed: values.1?.compressedBytes,
-      memoryPurgeable: values.1?.purgeableBytes,
-      networkDownloadBytesPerSecond: values.2?.downloadBytesPerSecond,
-      networkUploadBytesPerSecond: values.2?.uploadBytesPerSecond,
+      cpuUsage: latestCPUUsage,
+      cpuCoreUsages: latestCoreUsages,
+      memoryUsed: latestMemory?.usedBytes,
+      memoryTotal: latestMemory?.totalBytes,
+      memoryAvailable: latestMemory?.availableBytes,
+      memoryFree: latestMemory?.freeBytes,
+      memoryActive: latestMemory?.activeBytes,
+      memoryInactive: latestMemory?.inactiveBytes,
+      memoryWired: latestMemory?.wiredBytes,
+      memoryCompressed: latestMemory?.compressedBytes,
+      memoryPurgeable: latestMemory?.purgeableBytes,
+      networkDownloadBytesPerSecond: latestNetwork?.downloadBytesPerSecond,
+      networkUploadBytesPerSecond: latestNetwork?.uploadBytesPerSecond,
       diskUsed: disk?.usedBytes,
       diskTotal: disk?.totalBytes,
       diskAvailable: disk?.availableBytes,

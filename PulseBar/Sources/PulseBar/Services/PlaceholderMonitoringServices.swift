@@ -16,6 +16,18 @@ struct PlaceholderCPUService: CPUProviding {
   }
 }
 
+struct PlaceholderPerCoreCPUService: PerCoreCPUProviding {
+  let usages: [Double?]
+
+  init(usages: [Double?] = [0.21, 0.45, 0.32, 0.18, 0.62, 0.27, 0.14, 0.39]) {
+    self.usages = usages
+  }
+
+  func readPerCoreCPUUsage() async -> [Double?] {
+    usages
+  }
+}
+
 struct PlaceholderMemoryService: MemoryProviding {
   func readMemory() async -> MemoryReading? {
     let total = 18 * PlaceholderUnits.gibibyte

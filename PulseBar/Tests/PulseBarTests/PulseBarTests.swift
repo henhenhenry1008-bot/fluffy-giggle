@@ -105,6 +105,7 @@ struct PulseBarTests {
   func snapshotCoordination() async {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(usage: 0.32),
+      perCoreCPUProvider: PlaceholderPerCoreCPUService(usages: [0.2, 0.4]),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -114,6 +115,7 @@ struct PulseBarTests {
     await viewModel.refresh()
 
     #expect(viewModel.snapshot.cpuUsage == 0.32)
+    #expect(viewModel.snapshot.cpuCoreUsages == [0.2, 0.4])
     #expect(viewModel.snapshot.memoryUsed != nil)
     #expect(viewModel.snapshot.networkDownloadBytesPerSecond != nil)
     #expect(viewModel.snapshot.diskTotal != nil)
@@ -153,6 +155,7 @@ struct PulseBarTests {
   func boundedSnapshotHistory() async {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
+      perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -258,6 +261,7 @@ struct PulseBarTests {
   func monitoringLifecycle() {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
+      perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -289,6 +293,7 @@ struct PulseBarTests {
   func consolidatedAutomaticUpdate() async {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
+      perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -313,6 +318,7 @@ struct PulseBarTests {
     let slowMetricProvider = CountingSlowMetricProvider()
     let viewModel = SystemMonitorViewModel(
       cpuProvider: cpuProvider,
+      perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: slowMetricProvider,
@@ -344,6 +350,7 @@ struct PulseBarTests {
     let slowMetricProvider = CountingSlowMetricProvider()
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
+      perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: slowMetricProvider,
@@ -460,6 +467,48 @@ struct PulseBarTests {
     #expect(usage != nil)
 
     if let usage {
+      #expect((0...1).contains(usage))
+    }
+  }
+
+  @Test("Per-core CPU calculation preserves core order and handles topology changes")
+  func perCoreCPUCalculation() {
+    let previous = [
+      CPUTickSnapshot(user: 100, system: 100, idle: 200, nice: 0),
+      CPUTickSnapshot(user: 200, system: 100, idle: 100, nice: 0),
+    ]
+    let current = [
+      CPUTickSnapshot(user: 120, system: 110, idle: 210, nice: 0),
+      CPUTickSnapshot(user: 210, system: 110, idle: 130, nice: 0),
+      CPUTickSnapshot(user: 50, system: 20, idle: 100, nice: 0),
+    ]
+
+    let usages = PerCoreCPUService.calculateUsages(previous: previous, current: current)
+
+    #expect(usages.count == 3)
+    #expect(abs((usages[0] ?? 0) - 0.75) < 0.000_001)
+    #expect(abs((usages[1] ?? 0) - 0.4) < 0.000_001)
+    #expect(usages[2] == nil)
+  }
+
+  @Test("Per-core CPU service reads normalized logical processor measurements")
+  func livePerCoreCPUReading() async throws {
+    let service = PerCoreCPUService()
+    let baseline = await service.readPerCoreCPUUsage()
+
+    #expect(!baseline.isEmpty)
+    #expect(baseline.allSatisfy { $0 == nil })
+
+    var usages: [Double?] = []
+    for _ in 0..<10 {
+      try await Task.sleep(for: .milliseconds(100))
+      usages = await service.readPerCoreCPUUsage()
+      if usages.contains(where: { $0 != nil }) { break }
+    }
+
+    #expect(usages.count == baseline.count)
+    #expect(usages.contains(where: { $0 != nil }))
+    for usage in usages.compactMap({ $0 }) {
       #expect((0...1).contains(usage))
     }
   }

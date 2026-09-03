@@ -4,6 +4,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
   let id: UUID
   let timestamp: Date
   let cpuUsage: Double?
+  let cpuCoreUsages: [Double?]
   let memoryUsed: UInt64?
   let memoryTotal: UInt64?
   let memoryAvailable: UInt64?
@@ -27,6 +28,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     id: UUID = UUID(),
     timestamp: Date,
     cpuUsage: Double?,
+    cpuCoreUsages: [Double?],
     memoryUsed: UInt64?,
     memoryTotal: UInt64?,
     memoryAvailable: UInt64?,
@@ -49,6 +51,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     self.id = id
     self.timestamp = timestamp
     self.cpuUsage = cpuUsage
+    self.cpuCoreUsages = cpuCoreUsages
     self.memoryUsed = memoryUsed
     self.memoryTotal = memoryTotal
     self.memoryAvailable = memoryAvailable
@@ -72,6 +75,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
   static let empty = SystemSnapshot(
     timestamp: .now,
     cpuUsage: nil,
+    cpuCoreUsages: [],
     memoryUsed: nil,
     memoryTotal: nil,
     memoryAvailable: nil,

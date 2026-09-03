@@ -2,6 +2,10 @@ protocol CPUProviding: Sendable {
   func readCPUUsage() async -> Double?
 }
 
+protocol PerCoreCPUProviding: Sendable {
+  func readPerCoreCPUUsage() async -> [Double?]
+}
+
 protocol MemoryProviding: Sendable {
   func readMemory() async -> MemoryReading?
 }
