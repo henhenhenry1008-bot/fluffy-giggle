@@ -129,3 +129,14 @@ counts are validated and cached; no P/E-to-core-index mapping is assumed. Light
 and Dark appearance were checked through the computer-use skill. Existing battery
 behavior, refresh choices/default, and entitlements remain unchanged. The phase
 report lists the exact files changed and remaining hardware/runtime limitations.
+
+# Phase 24 Advanced Sensor Preflight
+
+[PHASE_24_SENSOR_CAPABILITIES.md](PHASE_24_SENSOR_CAPABILITIES.md) records the
+read-only capability check performed with the unchanged App Sandbox entitlement.
+SwiftPM and Xcode still pass 59/59 tests. The SMC connection is denied, legacy CPU
+frequency queries are unavailable, and the existing GPU statistics expose no
+temperature/frequency/power candidate fields on the current Mac. No sensor feature,
+private framework, new entitlement, or production code change was made. Further
+implementation requiring a separate website-build permission profile awaits an
+explicit user decision; the Phase 23 runnable application remains available.

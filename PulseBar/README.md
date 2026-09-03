@@ -20,6 +20,8 @@ Phase 22 adds an application-process Top CPU list, with resident memory and read
 
 Phase 23 adds physical/logical CPU totals and system-reported performance-level composition. The current Mac reports 6 Super and 12 Performance cores; the app does not assume every chip has Efficiency cores or map types onto Mach core indices. Counts use documented `sysctlbyname` keys; optional names fall back to `Level N`. Hardware composition is cached per app session, and incomplete breakdowns remain unavailable. All 59 tests pass in SwiftPM and Xcode. See [PHASE_23_CPU_TOPOLOGY.md](PHASE_23_CPU_TOPOLOGY.md) for the review, API evidence, changed files, and limitations. The battery compatibility fix is retained unchanged.
 
+Phase 24 completes a read-only advanced-sensor capability check, **not sensor implementation**. The current sandbox denies the AppleSMC connection, legacy CPU frequency queries are unavailable, and the existing GPU payload exposes no temperature/frequency/power candidates. A separate website-only experimental backend would change the permission boundary and awaits user authorization; the current app remains unchanged. See [PHASE_24_SENSOR_CAPABILITIES.md](PHASE_24_SENSOR_CAPABILITIES.md) for reproducible checks, exact results, and the proposed distribution split.
+
 The Phase 14 optimization notes and remaining runtime profiling work are recorded in `PERFORMANCE.md`.
 
 The Phase 15 full-project correctness review and Phase 20 battery-details completion review are recorded in `AUDIT.md`.
