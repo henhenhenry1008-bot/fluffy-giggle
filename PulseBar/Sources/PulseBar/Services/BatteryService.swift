@@ -44,7 +44,13 @@ actor BatteryService: BatteryProviding {
           maximumCapacity: maximumCapacity,
           isCharging: isCharging,
           isFullyCharged: isFullyCharged,
-          isACPowered: powerSourceState == kIOPSACPowerValue
+          isACPowered: powerSourceState == kIOPSACPowerValue,
+          healthStatus: Self.preferredHealthStatus(
+            condition: description[kIOPSBatteryHealthConditionKey] as? String,
+            estimate: description[kIOPSBatteryHealthKey] as? String
+          ),
+          timeToEmptyMinutes: (description[kIOPSTimeToEmptyKey] as? NSNumber)?.intValue,
+          timeToFullChargeMinutes: (description[kIOPSTimeToFullChargeKey] as? NSNumber)?.intValue
         )
       else {
         continue
@@ -61,7 +67,10 @@ actor BatteryService: BatteryProviding {
     maximumCapacity: Int,
     isCharging: Bool,
     isFullyCharged: Bool,
-    isACPowered: Bool
+    isACPowered: Bool,
+    healthStatus: String? = nil,
+    timeToEmptyMinutes: Int? = nil,
+    timeToFullChargeMinutes: Int? = nil
   ) -> BatteryReading? {
     guard currentCapacity >= 0, maximumCapacity > 0 else { return nil }
 
@@ -70,7 +79,32 @@ actor BatteryService: BatteryProviding {
       percentage: percentage,
       isCharging: isCharging,
       isFullyCharged: isFullyCharged,
-      isACPowered: isACPowered
+      isACPowered: isACPowered,
+      healthStatus: normalizedHealthStatus(healthStatus),
+      timeToEmptyMinutes: isCharging || isACPowered
+        ? nil : normalizedMinutes(timeToEmptyMinutes),
+      timeToFullChargeMinutes: isCharging && !isFullyCharged
+        ? normalizedMinutes(timeToFullChargeMinutes) : nil
     )
+  }
+
+  static func preferredHealthStatus(
+    condition: String?,
+    estimate: String?
+  ) -> String? {
+    normalizedHealthStatus(condition) ?? normalizedHealthStatus(estimate)
+  }
+
+  private static func normalizedHealthStatus(_ status: String?) -> String? {
+    guard let status else { return nil }
+
+    let normalized = status.trimmingCharacters(in: .whitespacesAndNewlines)
+    return normalized.isEmpty ? nil : normalized
+  }
+
+  private static func normalizedMinutes(_ minutes: Int?) -> Int? {
+    // IOPowerSources uses -1 while it is still calculating an estimate.
+    guard let minutes, minutes >= 0 else { return nil }
+    return minutes
   }
 }

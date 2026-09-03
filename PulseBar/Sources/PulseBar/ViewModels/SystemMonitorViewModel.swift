@@ -234,7 +234,10 @@ final class SystemMonitorViewModel: ObservableObject {
       batteryPercentage: battery?.percentage,
       batteryIsCharging: battery?.isCharging,
       batteryIsFullyCharged: battery?.isFullyCharged,
-      batteryIsACPowered: battery?.isACPowered
+      batteryIsACPowered: battery?.isACPowered,
+      batteryHealthStatus: battery?.healthStatus,
+      batteryTimeToEmptyMinutes: battery?.timeToEmptyMinutes,
+      batteryTimeToFullChargeMinutes: battery?.timeToFullChargeMinutes
     )
 
     history.append(nextSnapshot)

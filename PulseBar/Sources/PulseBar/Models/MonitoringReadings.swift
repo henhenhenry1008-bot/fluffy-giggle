@@ -34,4 +34,7 @@ struct BatteryReading: Equatable, Sendable {
   let isCharging: Bool
   let isFullyCharged: Bool
   let isACPowered: Bool
+  let healthStatus: String?
+  let timeToEmptyMinutes: Int?
+  let timeToFullChargeMinutes: Int?
 }

@@ -28,6 +28,9 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
   let batteryIsCharging: Bool?
   let batteryIsFullyCharged: Bool?
   let batteryIsACPowered: Bool?
+  let batteryHealthStatus: String?
+  let batteryTimeToEmptyMinutes: Int?
+  let batteryTimeToFullChargeMinutes: Int?
 
   init(
     id: UUID = UUID(),
@@ -56,7 +59,10 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     batteryPercentage: Double?,
     batteryIsCharging: Bool?,
     batteryIsFullyCharged: Bool?,
-    batteryIsACPowered: Bool?
+    batteryIsACPowered: Bool?,
+    batteryHealthStatus: String?,
+    batteryTimeToEmptyMinutes: Int?,
+    batteryTimeToFullChargeMinutes: Int?
   ) {
     self.id = id
     self.timestamp = timestamp
@@ -85,6 +91,9 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     self.batteryIsCharging = batteryIsCharging
     self.batteryIsFullyCharged = batteryIsFullyCharged
     self.batteryIsACPowered = batteryIsACPowered
+    self.batteryHealthStatus = batteryHealthStatus
+    self.batteryTimeToEmptyMinutes = batteryTimeToEmptyMinutes
+    self.batteryTimeToFullChargeMinutes = batteryTimeToFullChargeMinutes
   }
 
   static let empty = SystemSnapshot(
@@ -113,6 +122,9 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     batteryPercentage: nil,
     batteryIsCharging: nil,
     batteryIsFullyCharged: nil,
-    batteryIsACPowered: nil
+    batteryIsACPowered: nil,
+    batteryHealthStatus: nil,
+    batteryTimeToEmptyMinutes: nil,
+    batteryTimeToFullChargeMinutes: nil
   )
 }

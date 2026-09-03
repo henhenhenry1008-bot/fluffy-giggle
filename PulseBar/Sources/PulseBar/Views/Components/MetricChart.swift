@@ -91,7 +91,15 @@ struct MetricChart: View {
         maximum = max(maximum, sanitized(secondarySeries.value(sample)) ?? 0)
       }
     }
-    return 0...max(maximum * 1.1, 1)
+    return 0...Self.upperBound(for: maximum)
+  }
+
+  nonisolated static func upperBound(for maximum: Double) -> Double {
+    guard maximum.isFinite, maximum > 0 else { return 1 }
+
+    // Even finite samples can overflow when adding space above the chart.
+    let paddedMaximum = maximum * 1.1
+    return max(paddedMaximum.isFinite ? paddedMaximum : maximum, 1)
   }
 
   private func sanitized(_ value: Double?) -> Double? {

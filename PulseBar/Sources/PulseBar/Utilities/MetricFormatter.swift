@@ -75,6 +75,22 @@ enum MetricFormatter {
     }
   }
 
+  static func duration(minutes: Int?) -> String {
+    guard let minutes, minutes >= 0 else { return "Unavailable" }
+    guard minutes > 0 else { return "<1m" }
+
+    let hours = minutes / 60
+    let remainingMinutes = minutes % 60
+
+    if hours == 0 {
+      return "\(remainingMinutes)m"
+    }
+    if remainingMinutes == 0 {
+      return "\(hours)h"
+    }
+    return "\(hours)h \(remainingMinutes)m"
+  }
+
   private static func bitsPerSecond(from bytesPerSecond: Double) -> Double? {
     guard bytesPerSecond <= Double.greatestFiniteMagnitude / 8 else { return nil }
     return bytesPerSecond * 8

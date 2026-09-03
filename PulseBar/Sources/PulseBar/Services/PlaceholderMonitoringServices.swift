@@ -82,7 +82,10 @@ struct PlaceholderBatteryService: BatteryProviding {
       percentage: 0.83,
       isCharging: true,
       isFullyCharged: false,
-      isACPowered: true
+      isACPowered: true,
+      healthStatus: "Good",
+      timeToEmptyMinutes: nil,
+      timeToFullChargeMinutes: 35
     )
   }
 }

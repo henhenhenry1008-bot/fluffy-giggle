@@ -4,7 +4,7 @@ PulseBar is an original macOS 14+ menu bar system monitor built with Swift and S
 
 ## Current status
 
-The project has a compilable menu bar dashboard, one centralized and cancellable refresh loop, bounded real-time charts, and a native persistent Settings window. Users can configure refresh speed, history length, network units, appearance, Launch at Login, and which reusable metric components appear in the menu bar. Menu bar metrics use one stable CPU, memory, download, upload, and battery order, update immediately, and retain compact monospaced number presentation. Login-item registration and approval state come from `SMAppService`, with a direct link to the relevant System Settings panel when macOS requires user approval. Total and per-core CPU usage are measured from real Mach tick counters. Memory usage, cached file-backed pages, wired memory, compressed memory, and Swap usage come from Mach VM statistics and public `sysctl` values. Network throughput is calculated from native 64-bit BSD interface counters. Disk capacity comes from Foundation volume resource values, while system-wide disk read and write throughput is calculated from public IOKit block-storage counters; systems that do not expose these counters report throughput as unavailable. Battery state comes from IOKit power source APIs, and batteryless Macs report the metric as unavailable. CPU frequency and core-type classification are not reported because macOS has no stable public API for those values; temperature sensors and privileged operations are not implemented yet.
+The project has a compilable menu bar dashboard, one centralized and cancellable refresh loop, bounded real-time charts, and a native persistent Settings window. Users can configure refresh speed, history length, network units, appearance, Launch at Login, and which reusable metric components appear in the menu bar. Menu bar metrics use one stable CPU, memory, download, upload, and battery order, update immediately, and retain compact monospaced number presentation. Login-item registration and approval state come from `SMAppService`, with a direct link to the relevant System Settings panel when macOS requires user approval. Total and per-core CPU usage are measured from real Mach tick counters. Memory usage, cached file-backed pages, wired memory, compressed memory, and Swap usage come from Mach VM statistics and public `sysctl` values. Network throughput is calculated from native 64-bit BSD interface counters. Disk capacity comes from Foundation volume resource values, while system-wide disk read and write throughput is calculated from public IOKit block-storage counters; systems that do not expose these counters report throughput as unavailable. Battery percentage, power state, health status, and charge/discharge time estimates come from public IOKit power source APIs, and batteryless Macs report the metric as unavailable. CPU frequency and core-type classification are not reported because macOS has no stable public API for those values; temperature sensors and privileged operations are not implemented yet.
 
 The data flow is:
 
@@ -16,7 +16,7 @@ Automatic sampling keeps total CPU, per-core CPU, memory, network, and disk-thro
 
 The Phase 14 optimization notes and remaining runtime profiling work are recorded in `PERFORMANCE.md`.
 
-The Phase 15 full-project correctness review is recorded in `AUDIT.md`.
+The Phase 15 full-project correctness review and Phase 20 battery-details completion review are recorded in `AUDIT.md`.
 
 ## Build and test
 

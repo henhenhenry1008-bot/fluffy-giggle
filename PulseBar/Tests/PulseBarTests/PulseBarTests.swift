@@ -23,6 +23,24 @@ struct PulseBarTests {
     #expect(
       MetricFormatter.compactRate(Double.greatestFiniteMagnitude, unit: .bitsPerSecond)
         == "—")
+    #expect(MetricFormatter.duration(minutes: 125) == "2h 5m")
+    #expect(MetricFormatter.duration(minutes: 120) == "2h")
+    #expect(MetricFormatter.duration(minutes: 45) == "45m")
+    #expect(MetricFormatter.duration(minutes: 0) == "<1m")
+    #expect(MetricFormatter.duration(minutes: -1) == "Unavailable")
+    #expect(MetricFormatter.duration(minutes: nil) == "Unavailable")
+  }
+
+  @Test("Chart bounds remain finite when padding extreme samples")
+  func chartBoundaries() {
+    #expect(MetricChart.upperBound(for: 0) == 1)
+    #expect(MetricChart.upperBound(for: 10) == 11)
+    #expect(MetricChart.upperBound(for: -1) == 1)
+    #expect(MetricChart.upperBound(for: .infinity) == 1)
+    #expect(MetricChart.upperBound(for: .nan) == 1)
+    #expect(
+      MetricChart.upperBound(for: Double.greatestFiniteMagnitude)
+        == Double.greatestFiniteMagnitude)
   }
 
   @Test("Menu bar presentation is compact and includes download throughput")
@@ -129,6 +147,9 @@ struct PulseBarTests {
     #expect(viewModel.snapshot.batteryIsCharging == true)
     #expect(viewModel.snapshot.batteryIsFullyCharged == false)
     #expect(viewModel.snapshot.batteryIsACPowered == true)
+    #expect(viewModel.snapshot.batteryHealthStatus == "Good")
+    #expect(viewModel.snapshot.batteryTimeToEmptyMinutes == nil)
+    #expect(viewModel.snapshot.batteryTimeToFullChargeMinutes == 35)
     #expect(viewModel.history.count == 1)
     #expect(viewModel.history.last == viewModel.snapshot)
   }
@@ -748,7 +769,10 @@ struct PulseBarTests {
       maximumCapacity: 100,
       isCharging: true,
       isFullyCharged: false,
-      isACPowered: true
+      isACPowered: true,
+      healthStatus: " Good ",
+      timeToEmptyMinutes: 120,
+      timeToFullChargeMinutes: 45
     )
     let clampedReading = BatteryService.makeReading(
       currentCapacity: 120,
@@ -757,12 +781,32 @@ struct PulseBarTests {
       isFullyCharged: true,
       isACPowered: true
     )
+    let dischargingReading = BatteryService.makeReading(
+      currentCapacity: 50,
+      maximumCapacity: 100,
+      isCharging: false,
+      isFullyCharged: false,
+      isACPowered: false,
+      healthStatus: "\n",
+      timeToEmptyMinutes: 125,
+      timeToFullChargeMinutes: 30
+    )
 
     #expect(reading?.percentage == 0.8)
     #expect(reading?.isCharging == true)
     #expect(reading?.isFullyCharged == false)
     #expect(reading?.isACPowered == true)
+    #expect(reading?.healthStatus == "Good")
+    #expect(reading?.timeToEmptyMinutes == nil)
+    #expect(reading?.timeToFullChargeMinutes == 45)
     #expect(clampedReading?.percentage == 1)
+    #expect(dischargingReading?.healthStatus == nil)
+    #expect(dischargingReading?.timeToEmptyMinutes == 125)
+    #expect(dischargingReading?.timeToFullChargeMinutes == nil)
+    #expect(
+      BatteryService.preferredHealthStatus(condition: " Check Battery ", estimate: "Good")
+        == "Check Battery")
+    #expect(BatteryService.preferredHealthStatus(condition: "", estimate: " Fair ") == "Fair")
     #expect(
       BatteryService.makeReading(
         currentCapacity: -1,
@@ -781,6 +825,41 @@ struct PulseBarTests {
       ) == nil)
   }
 
+  @Test("Battery estimates hide unknown values and inactive charge or discharge times")
+  func batteryEstimateAvailability() throws {
+    for minutes in [nil, -1, 0, 45] as [Int?] {
+      let expectedMinutes = minutes == -1 ? nil : minutes
+      let discharging = try #require(
+        BatteryService.makeReading(
+          currentCapacity: 50, maximumCapacity: 100,
+          isCharging: false, isFullyCharged: false, isACPowered: false,
+          timeToEmptyMinutes: minutes, timeToFullChargeMinutes: minutes
+        ))
+      #expect(discharging.timeToEmptyMinutes == expectedMinutes)
+      #expect(discharging.timeToFullChargeMinutes == nil)
+
+      let charging = try #require(
+        BatteryService.makeReading(
+          currentCapacity: 50, maximumCapacity: 100,
+          isCharging: true, isFullyCharged: false, isACPowered: true,
+          timeToEmptyMinutes: minutes, timeToFullChargeMinutes: minutes
+        ))
+      #expect(charging.timeToEmptyMinutes == nil)
+      #expect(charging.timeToFullChargeMinutes == expectedMinutes)
+
+      for fullyCharged in [false, true] {
+        let pluggedIn = try #require(
+          BatteryService.makeReading(
+            currentCapacity: 100, maximumCapacity: 100,
+            isCharging: false, isFullyCharged: fullyCharged, isACPowered: true,
+            timeToEmptyMinutes: minutes, timeToFullChargeMinutes: minutes
+          ))
+        #expect(pluggedIn.timeToEmptyMinutes == nil)
+        #expect(pluggedIn.timeToFullChargeMinutes == nil)
+      }
+    }
+  }
+
   @Test("Battery service supports battery-equipped and batteryless Macs")
   func liveBatteryReading() async {
     guard let reading = await BatteryService().readBattery() else {
@@ -790,6 +869,20 @@ struct PulseBarTests {
     #expect((0...1).contains(reading.percentage))
     if reading.isCharging || reading.isFullyCharged {
       #expect(reading.isACPowered)
+    }
+    if let timeToEmptyMinutes = reading.timeToEmptyMinutes {
+      #expect(timeToEmptyMinutes >= 0)
+      #expect(!reading.isCharging)
+      #expect(!reading.isACPowered)
+    }
+    if let timeToFullChargeMinutes = reading.timeToFullChargeMinutes {
+      #expect(timeToFullChargeMinutes >= 0)
+      #expect(reading.isCharging)
+      #expect(!reading.isFullyCharged)
+    }
+    if let healthStatus = reading.healthStatus {
+      #expect(!healthStatus.isEmpty)
+      #expect(healthStatus == healthStatus.trimmingCharacters(in: .whitespacesAndNewlines))
     }
   }
 }

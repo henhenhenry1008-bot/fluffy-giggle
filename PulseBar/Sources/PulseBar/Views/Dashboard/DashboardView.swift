@@ -198,6 +198,22 @@ struct DashboardView: View {
 
       ProgressView(value: viewModel.snapshot.batteryPercentage ?? 0, total: 1)
         .tint(batteryTint)
+
+      if let batteryTimeEstimate {
+        Text(batteryTimeEstimate)
+          .font(.caption2)
+          .foregroundStyle(.secondary)
+          .monospacedDigit()
+          .lineLimit(1)
+      }
+
+      if let healthStatus = viewModel.snapshot.batteryHealthStatus {
+        Text("Health \(healthStatus)")
+          .font(.caption2)
+          .foregroundStyle(.secondary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.75)
+      }
     }
   }
 
@@ -370,6 +386,22 @@ struct DashboardView: View {
       return "On AC Power"
     }
     return "On Battery"
+  }
+
+  private var batteryTimeEstimate: String? {
+    if viewModel.snapshot.batteryIsCharging == true,
+      let minutes = viewModel.snapshot.batteryTimeToFullChargeMinutes
+    {
+      return "Full in \(MetricFormatter.duration(minutes: minutes))"
+    }
+
+    if viewModel.snapshot.batteryIsACPowered == false,
+      let minutes = viewModel.snapshot.batteryTimeToEmptyMinutes
+    {
+      return "\(MetricFormatter.duration(minutes: minutes)) remaining"
+    }
+
+    return nil
   }
 
   private var batterySystemImage: String {
