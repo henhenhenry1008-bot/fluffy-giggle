@@ -3,6 +3,8 @@ import SwiftUI
 
 struct DashboardView: View {
   @ObservedObject var viewModel: SystemMonitorViewModel
+  var showsOpenWindowButton = true
+  @Environment(\.openWindow) private var openWindow
   @AppStorage(AppPreferenceKey.networkDisplayUnit) private var networkDisplayUnitValue =
     NetworkDisplayUnit.automatic.rawValue
 
@@ -72,6 +74,19 @@ struct DashboardView: View {
       .padding(.horizontal, 8)
       .padding(.vertical, 5)
       .background(monitoringStatusTint.opacity(0.1), in: Capsule())
+
+      if showsOpenWindowButton {
+        Button {
+          openWindow(id: "dashboard")
+          NSApplication.shared.activate(ignoringOtherApps: true)
+        } label: {
+          Image(systemName: "macwindow")
+            .frame(width: 24, height: 24)
+        }
+        .buttonStyle(.plain)
+        .help("Open dashboard window")
+        .accessibilityLabel("Open dashboard window")
+      }
 
       Button {
         Task {

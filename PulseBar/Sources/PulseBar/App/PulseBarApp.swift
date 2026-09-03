@@ -12,6 +12,17 @@ struct PulseBarApp: App {
     AppearancePreference.system.rawValue
 
   var body: some Scene {
+    Window("PulseBar", id: "dashboard") {
+      DashboardView(viewModel: monitor, showsOpenWindowButton: false)
+        .preferredColorScheme(appearancePreference.colorScheme)
+        .onAppear {
+          applyStoredMonitoringPreferences()
+          monitor.startMonitoring()
+        }
+    }
+    .defaultPosition(.center)
+    .windowResizability(.contentSize)
+
     MenuBarExtra {
       DashboardView(viewModel: monitor)
         .preferredColorScheme(appearancePreference.colorScheme)

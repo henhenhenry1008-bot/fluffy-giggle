@@ -24,6 +24,8 @@ The Phase 15 full-project correctness review and Phase 20 battery-details comple
 
 ## Build and test
 
+For the local UI handoff, double-click `运行版/PulseBar.app` in this project folder. This generated app is locally signed with the existing sandbox entitlement and is not committed to Git. It is for testing on this Mac, not a notarized distribution build. The app now opens a normal dashboard window on launch; the menu-bar panel's window button can reopen it. Both surfaces share the same view model and monitoring task. Closing the dashboard leaves menu-bar monitoring running; use **Quit PulseBar** to stop the app. Scroll the dashboard to see GPU, network, and application-process cards, and open **Settings** to choose 0.5, 1, 2 or 5 seconds (default: 2).
+
 ```bash
 swift build
 swift test

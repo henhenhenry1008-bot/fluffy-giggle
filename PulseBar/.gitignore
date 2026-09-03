@@ -2,6 +2,7 @@
 .cache/
 .swiftpm/
 DerivedData/
+运行版/
 *.xcuserstate
 xcuserdata/
 .DS_Store
