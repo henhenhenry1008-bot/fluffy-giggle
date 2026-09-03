@@ -5,9 +5,12 @@ struct MemoryReading: Equatable, Sendable {
   let freeBytes: UInt64
   let activeBytes: UInt64
   let inactiveBytes: UInt64
+  let cachedBytes: UInt64
   let wiredBytes: UInt64
   let compressedBytes: UInt64
   let purgeableBytes: UInt64
+  let swapUsedBytes: UInt64?
+  let swapTotalBytes: UInt64?
 }
 
 struct NetworkReading: Equatable, Sendable {

@@ -35,4 +35,4 @@ Both fixes are limited to invalid edge inputs and do not change normal hardware 
 - Launch at Login requires a normally signed installed build for an end-to-end check.
 - TestFlight/App Store signing, notarization, app icon assets, localization, and UI automation are not configured yet.
 - A long Instruments session covering idle operation, sleep/wake, and network-interface changes remains recommended before release.
-- Temperature, GPU, fan, power, process, swap, and disk-throughput monitoring belong to the later advanced-feature plan.
+- Temperature, GPU, fan, power, process, and disk-throughput monitoring belong to the later advanced-feature plan.

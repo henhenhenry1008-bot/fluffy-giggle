@@ -117,6 +117,9 @@ struct PulseBarTests {
     #expect(viewModel.snapshot.cpuUsage == 0.32)
     #expect(viewModel.snapshot.cpuCoreUsages == [0.2, 0.4])
     #expect(viewModel.snapshot.memoryUsed != nil)
+    #expect(viewModel.snapshot.memoryCached == UInt64(3) * 1_024 * 1_024 * 1_024)
+    #expect(viewModel.snapshot.swapUsed == UInt64(512) * 1_024 * 1_024)
+    #expect(viewModel.snapshot.swapTotal == UInt64(4) * 1_024 * 1_024 * 1_024)
     #expect(viewModel.snapshot.networkDownloadBytesPerSecond != nil)
     #expect(viewModel.snapshot.diskTotal != nil)
     #expect(viewModel.snapshot.diskAvailable != nil)
@@ -522,9 +525,12 @@ struct PulseBarTests {
       freePages: 100,
       activePages: 500,
       inactivePages: 200,
+      externalPages: 150,
       wiredPages: 200,
       compressedPages: 50,
-      purgeablePages: 25
+      purgeablePages: 25,
+      swapUsedBytes: 1_200,
+      swapTotalBytes: 1_000
     )
 
     #expect(reading.availableBytes == 300 * pageSize)
@@ -532,9 +538,12 @@ struct PulseBarTests {
     #expect(reading.freeBytes == 100 * pageSize)
     #expect(reading.activeBytes == 500 * pageSize)
     #expect(reading.inactiveBytes == 200 * pageSize)
+    #expect(reading.cachedBytes == 150 * pageSize)
     #expect(reading.wiredBytes == 200 * pageSize)
     #expect(reading.compressedBytes == 50 * pageSize)
     #expect(reading.purgeableBytes == 25 * pageSize)
+    #expect(reading.swapUsedBytes == 1_000)
+    #expect(reading.swapTotalBytes == 1_000)
   }
 
   @Test("Memory service reads a consistent physical-memory measurement")
@@ -550,9 +559,17 @@ struct PulseBarTests {
       #expect(reading.freeBytes <= reading.totalBytes)
       #expect(reading.activeBytes <= reading.totalBytes)
       #expect(reading.inactiveBytes <= reading.totalBytes)
+      #expect(reading.cachedBytes <= reading.totalBytes)
       #expect(reading.wiredBytes <= reading.totalBytes)
       #expect(reading.compressedBytes <= reading.totalBytes)
       #expect(reading.purgeableBytes <= reading.totalBytes)
+      #expect(reading.swapUsedBytes != nil)
+      #expect(reading.swapTotalBytes != nil)
+      if let swapUsedBytes = reading.swapUsedBytes,
+        let swapTotalBytes = reading.swapTotalBytes
+      {
+        #expect(swapUsedBytes <= swapTotalBytes)
+      }
     }
   }
 

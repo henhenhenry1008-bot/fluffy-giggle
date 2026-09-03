@@ -11,6 +11,11 @@ struct DashboardView: View {
     GridItem(.flexible(), spacing: 10),
   ]
 
+  private let memoryDetailColumns = [
+    GridItem(.flexible(), spacing: 6),
+    GridItem(.flexible(), spacing: 6),
+  ]
+
   var body: some View {
     VStack(spacing: 12) {
       header
@@ -124,10 +129,19 @@ struct DashboardView: View {
       )
       .frame(height: 40)
 
-      Text("Available \(MetricFormatter.bytes(viewModel.snapshot.memoryAvailable))")
+      LazyVGrid(columns: memoryDetailColumns, alignment: .leading, spacing: 5) {
+        memoryDetail("Available", value: viewModel.snapshot.memoryAvailable)
+        memoryDetail("Cached", value: viewModel.snapshot.memoryCached)
+        memoryDetail("Wired", value: viewModel.snapshot.memoryWired)
+        memoryDetail("Compressed", value: viewModel.snapshot.memoryCompressed)
+      }
+
+      Text(swapSummary)
         .font(.caption2)
         .foregroundStyle(.secondary)
+        .monospacedDigit()
         .lineLimit(1)
+        .minimumScaleFactor(0.75)
     }
   }
 
@@ -249,8 +263,33 @@ struct DashboardView: View {
     }
   }
 
+  private func memoryDetail(_ title: String, value: UInt64?) -> some View {
+    VStack(alignment: .leading, spacing: 1) {
+      Text(title)
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+
+      Text(MetricFormatter.bytes(value))
+        .font(.caption.weight(.medium))
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
   private var memoryUsage: Double? {
     Self.memoryUsage(for: viewModel.snapshot)
+  }
+
+  private var swapSummary: String {
+    guard let used = viewModel.snapshot.swapUsed,
+      let total = viewModel.snapshot.swapTotal
+    else {
+      return "Swap unavailable"
+    }
+
+    return "Swap \(MetricFormatter.bytes(used)) / \(MetricFormatter.bytes(total))"
   }
 
   private static func memoryUsage(for snapshot: SystemSnapshot) -> Double? {

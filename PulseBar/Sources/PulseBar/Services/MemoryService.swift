@@ -16,6 +16,7 @@ actor MemoryService: MemoryProviding {
     }
 
     guard let statistics = Self.readVMStatistics() else { return nil }
+    let swapUsage = Self.readSwapUsage()
 
     return Self.makeReading(
       totalBytes: configuration.totalBytes,
@@ -23,9 +24,12 @@ actor MemoryService: MemoryProviding {
       freePages: UInt64(statistics.free_count),
       activePages: UInt64(statistics.active_count),
       inactivePages: UInt64(statistics.inactive_count),
+      externalPages: UInt64(statistics.external_page_count),
       wiredPages: UInt64(statistics.wire_count),
       compressedPages: UInt64(statistics.compressor_page_count),
-      purgeablePages: UInt64(statistics.purgeable_count)
+      purgeablePages: UInt64(statistics.purgeable_count),
+      swapUsedBytes: swapUsage?.usedBytes,
+      swapTotalBytes: swapUsage?.totalBytes
     )
   }
 
@@ -35,16 +39,24 @@ actor MemoryService: MemoryProviding {
     freePages: UInt64,
     activePages: UInt64,
     inactivePages: UInt64,
+    externalPages: UInt64,
     wiredPages: UInt64,
     compressedPages: UInt64,
-    purgeablePages: UInt64
+    purgeablePages: UInt64,
+    swapUsedBytes: UInt64? = nil,
+    swapTotalBytes: UInt64? = nil
   ) -> MemoryReading {
     let freeBytes = bytes(forPages: freePages, pageSize: pageSize)
     let activeBytes = bytes(forPages: activePages, pageSize: pageSize)
     let inactiveBytes = bytes(forPages: inactivePages, pageSize: pageSize)
+    let cachedBytes = bytes(forPages: externalPages, pageSize: pageSize)
     let wiredBytes = bytes(forPages: wiredPages, pageSize: pageSize)
     let compressedBytes = bytes(forPages: compressedPages, pageSize: pageSize)
     let purgeableBytes = bytes(forPages: purgeablePages, pageSize: pageSize)
+    let swapUsage = normalizedSwapUsage(
+      usedBytes: swapUsedBytes,
+      totalBytes: swapTotalBytes
+    )
 
     // Inactive pages are readily reclaimable on macOS. Treating them as
     // available produces a pressure-oriented usage figure instead of the
@@ -60,9 +72,12 @@ actor MemoryService: MemoryProviding {
       freeBytes: min(freeBytes, totalBytes),
       activeBytes: min(activeBytes, totalBytes),
       inactiveBytes: min(inactiveBytes, totalBytes),
+      cachedBytes: min(cachedBytes, totalBytes),
       wiredBytes: min(wiredBytes, totalBytes),
       compressedBytes: min(compressedBytes, totalBytes),
-      purgeableBytes: min(purgeableBytes, totalBytes)
+      purgeableBytes: min(purgeableBytes, totalBytes),
+      swapUsedBytes: swapUsage?.usedBytes,
+      swapTotalBytes: swapUsage?.totalBytes
     )
   }
 
@@ -107,6 +122,29 @@ actor MemoryService: MemoryProviding {
 
     guard result == KERN_SUCCESS else { return nil }
     return statistics
+  }
+
+  private static func readSwapUsage() -> (usedBytes: UInt64, totalBytes: UInt64)? {
+    var usage = xsw_usage()
+    var size = MemoryLayout<xsw_usage>.size
+    let result = sysctlbyname("vm.swapusage", &usage, &size, nil, 0)
+
+    guard result == 0, size >= MemoryLayout<xsw_usage>.size else {
+      return nil
+    }
+
+    return (
+      usedBytes: min(usage.xsu_used, usage.xsu_total),
+      totalBytes: usage.xsu_total
+    )
+  }
+
+  private static func normalizedSwapUsage(
+    usedBytes: UInt64?,
+    totalBytes: UInt64?
+  ) -> (usedBytes: UInt64, totalBytes: UInt64)? {
+    guard let usedBytes, let totalBytes else { return nil }
+    return (min(usedBytes, totalBytes), totalBytes)
   }
 
   private static func bytes(forPages pages: UInt64, pageSize: UInt64) -> UInt64 {

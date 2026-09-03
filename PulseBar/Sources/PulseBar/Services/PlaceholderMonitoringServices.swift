@@ -40,9 +40,12 @@ struct PlaceholderMemoryService: MemoryProviding {
       freeBytes: 2 * PlaceholderUnits.gibibyte,
       activeBytes: 6 * PlaceholderUnits.gibibyte,
       inactiveBytes: 4 * PlaceholderUnits.gibibyte,
+      cachedBytes: 3 * PlaceholderUnits.gibibyte,
       wiredBytes: 2 * PlaceholderUnits.gibibyte,
       compressedBytes: PlaceholderUnits.gibibyte,
-      purgeableBytes: PlaceholderUnits.gibibyte / 2
+      purgeableBytes: PlaceholderUnits.gibibyte / 2,
+      swapUsedBytes: PlaceholderUnits.gibibyte / 2,
+      swapTotalBytes: 4 * PlaceholderUnits.gibibyte
     )
   }
 }

@@ -11,9 +11,12 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
   let memoryFree: UInt64?
   let memoryActive: UInt64?
   let memoryInactive: UInt64?
+  let memoryCached: UInt64?
   let memoryWired: UInt64?
   let memoryCompressed: UInt64?
   let memoryPurgeable: UInt64?
+  let swapUsed: UInt64?
+  let swapTotal: UInt64?
   let networkDownloadBytesPerSecond: Double?
   let networkUploadBytesPerSecond: Double?
   let diskUsed: UInt64?
@@ -35,9 +38,12 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     memoryFree: UInt64?,
     memoryActive: UInt64?,
     memoryInactive: UInt64?,
+    memoryCached: UInt64?,
     memoryWired: UInt64?,
     memoryCompressed: UInt64?,
     memoryPurgeable: UInt64?,
+    swapUsed: UInt64?,
+    swapTotal: UInt64?,
     networkDownloadBytesPerSecond: Double?,
     networkUploadBytesPerSecond: Double?,
     diskUsed: UInt64?,
@@ -58,9 +64,12 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     self.memoryFree = memoryFree
     self.memoryActive = memoryActive
     self.memoryInactive = memoryInactive
+    self.memoryCached = memoryCached
     self.memoryWired = memoryWired
     self.memoryCompressed = memoryCompressed
     self.memoryPurgeable = memoryPurgeable
+    self.swapUsed = swapUsed
+    self.swapTotal = swapTotal
     self.networkDownloadBytesPerSecond = networkDownloadBytesPerSecond
     self.networkUploadBytesPerSecond = networkUploadBytesPerSecond
     self.diskUsed = diskUsed
@@ -82,9 +91,12 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     memoryFree: nil,
     memoryActive: nil,
     memoryInactive: nil,
+    memoryCached: nil,
     memoryWired: nil,
     memoryCompressed: nil,
     memoryPurgeable: nil,
+    swapUsed: nil,
+    swapTotal: nil,
     networkDownloadBytesPerSecond: nil,
     networkUploadBytesPerSecond: nil,
     diskUsed: nil,
