@@ -16,6 +16,7 @@ protocol NetworkProviding: Sendable {
 
 protocol DiskProviding: Sendable {
   func readDisk() async -> DiskReading?
+  func readDiskThroughput() async -> DiskThroughputReading?
 }
 
 protocol BatteryProviding: Sendable {

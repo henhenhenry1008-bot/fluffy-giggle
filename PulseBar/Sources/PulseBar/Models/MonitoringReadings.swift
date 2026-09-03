@@ -24,6 +24,11 @@ struct DiskReading: Equatable, Sendable {
   let availableBytes: UInt64
 }
 
+struct DiskThroughputReading: Equatable, Sendable {
+  let readBytesPerSecond: Double
+  let writeBytesPerSecond: Double
+}
+
 struct BatteryReading: Equatable, Sendable {
   let percentage: Double
   let isCharging: Bool

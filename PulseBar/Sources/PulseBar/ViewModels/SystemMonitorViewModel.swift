@@ -179,6 +179,7 @@ final class SystemMonitorViewModel: ObservableObject {
     async let cpuCoreUsages = perCoreCPUProvider.readPerCoreCPUUsage()
     async let memory = memoryProvider.readMemory()
     async let network = networkProvider.readNetwork()
+    async let diskThroughput = diskProvider.readDiskThroughput()
 
     var disk = diskCache?.value
     var battery = batteryCache?.value
@@ -193,8 +194,8 @@ final class SystemMonitorViewModel: ObservableObject {
       battery = await batteryProvider.readBattery()
     }
 
-    let (latestCPUUsage, latestCoreUsages, latestMemory, latestNetwork) =
-      await (cpuUsage, cpuCoreUsages, memory, network)
+    let (latestCPUUsage, latestCoreUsages, latestMemory, latestNetwork, latestDiskThroughput) =
+      await (cpuUsage, cpuCoreUsages, memory, network, diskThroughput)
 
     // A canceled automatic sample should not publish after monitoring stops or
     // an interval change replaces its loop.
@@ -228,6 +229,8 @@ final class SystemMonitorViewModel: ObservableObject {
       diskUsed: disk?.usedBytes,
       diskTotal: disk?.totalBytes,
       diskAvailable: disk?.availableBytes,
+      diskReadBytesPerSecond: latestDiskThroughput?.readBytesPerSecond,
+      diskWriteBytesPerSecond: latestDiskThroughput?.writeBytesPerSecond,
       batteryPercentage: battery?.percentage,
       batteryIsCharging: battery?.isCharging,
       batteryIsFullyCharged: battery?.isFullyCharged,

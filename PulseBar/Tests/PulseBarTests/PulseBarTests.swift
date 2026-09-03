@@ -123,6 +123,8 @@ struct PulseBarTests {
     #expect(viewModel.snapshot.networkDownloadBytesPerSecond != nil)
     #expect(viewModel.snapshot.diskTotal != nil)
     #expect(viewModel.snapshot.diskAvailable != nil)
+    #expect(viewModel.snapshot.diskReadBytesPerSecond == Double(18 * 1_024 * 1_024))
+    #expect(viewModel.snapshot.diskWriteBytesPerSecond == Double(6 * 1_024 * 1_024))
     #expect(viewModel.snapshot.batteryPercentage == 0.83)
     #expect(viewModel.snapshot.batteryIsCharging == true)
     #expect(viewModel.snapshot.batteryIsFullyCharged == false)
@@ -343,6 +345,7 @@ struct PulseBarTests {
 
     let counts = await slowMetricProvider.callCounts()
     #expect(counts.disk == 2)
+    #expect(counts.throughput == 2)
     #expect(counts.battery == 2)
   }
 
@@ -364,29 +367,34 @@ struct PulseBarTests {
     await viewModel.refreshForMonitoring()
     var counts = await slowMetricProvider.callCounts()
     #expect(counts.disk == 1)
+    #expect(counts.throughput == 1)
     #expect(counts.battery == 1)
 
     dateSource.advance(by: 1)
     await viewModel.refreshForMonitoring()
     counts = await slowMetricProvider.callCounts()
     #expect(counts.disk == 1)
+    #expect(counts.throughput == 2)
     #expect(counts.battery == 1)
 
     dateSource.advance(by: 4)
     await viewModel.refreshForMonitoring()
     counts = await slowMetricProvider.callCounts()
     #expect(counts.disk == 1)
+    #expect(counts.throughput == 3)
     #expect(counts.battery == 2)
 
     dateSource.advance(by: 25)
     await viewModel.refreshForMonitoring()
     counts = await slowMetricProvider.callCounts()
     #expect(counts.disk == 2)
+    #expect(counts.throughput == 4)
     #expect(counts.battery == 3)
 
     await viewModel.refresh()
     counts = await slowMetricProvider.callCounts()
     #expect(counts.disk == 3)
+    #expect(counts.throughput == 5)
     #expect(counts.battery == 4)
   }
 
@@ -668,6 +676,71 @@ struct PulseBarTests {
     }
   }
 
+  @Test("Disk rates handle new, removed, and reset devices")
+  func diskThroughputCalculation() {
+    let previous: DiskCounterSnapshot = [
+      1: DiskDeviceCounters(readBytes: 1_000, writtenBytes: 500),
+      2: DiskDeviceCounters(readBytes: 8_000, writtenBytes: 4_000),
+      4: DiskDeviceCounters(readBytes: 90_000, writtenBytes: 45_000),
+    ]
+    let current: DiskCounterSnapshot = [
+      1: DiskDeviceCounters(readBytes: 5_000, writtenBytes: 2_500),
+      2: DiskDeviceCounters(readBytes: 100, writtenBytes: 4_500),
+      3: DiskDeviceCounters(readBytes: 50_000, writtenBytes: 25_000),
+    ]
+
+    let reading = DiskService.makeThroughputReading(
+      previous: previous,
+      current: current,
+      elapsedSeconds: 2
+    )
+
+    #expect(reading?.readBytesPerSecond == 2_000)
+    #expect(reading?.writeBytesPerSecond == 1_250)
+  }
+
+  @Test("Disk rate calculation rejects invalid intervals and non-finite results")
+  func invalidDiskThroughput() {
+    let baseline: DiskCounterSnapshot = [
+      1: DiskDeviceCounters(readBytes: 0, writtenBytes: 0)
+    ]
+
+    #expect(
+      DiskService.makeThroughputReading(
+        previous: baseline,
+        current: baseline,
+        elapsedSeconds: 0
+      ) == nil)
+
+    let maximum: DiskCounterSnapshot = [
+      1: DiskDeviceCounters(readBytes: .max, writtenBytes: .max)
+    ]
+    #expect(
+      DiskService.makeThroughputReading(
+        previous: baseline,
+        current: maximum,
+        elapsedSeconds: .leastNonzeroMagnitude
+      ) == nil)
+  }
+
+  @Test("Disk service reads non-negative aggregate throughput")
+  func liveDiskThroughput() async throws {
+    let service = DiskService()
+
+    #expect(await service.readDiskThroughput() == nil)
+    try await Task.sleep(for: .milliseconds(100))
+
+    guard let reading = await service.readDiskThroughput() else {
+      // Some virtualized Macs do not expose IOBlockStorageDriver statistics.
+      return
+    }
+
+    #expect(reading.readBytesPerSecond >= 0)
+    #expect(reading.writeBytesPerSecond >= 0)
+    #expect(reading.readBytesPerSecond.isFinite)
+    #expect(reading.writeBytesPerSecond.isFinite)
+  }
+
   @Test("Battery calculation normalizes capacity and preserves power states")
   func batteryCalculation() {
     let reading = BatteryService.makeReading(
@@ -776,6 +849,7 @@ private final class TestDateSource {
 
 private actor CountingSlowMetricProvider: DiskProviding, BatteryProviding {
   private var diskCallCount = 0
+  private var diskThroughputCallCount = 0
   private var batteryCallCount = 0
 
   func readDisk() async -> DiskReading? {
@@ -787,13 +861,18 @@ private actor CountingSlowMetricProvider: DiskProviding, BatteryProviding {
     )
   }
 
+  func readDiskThroughput() async -> DiskThroughputReading? {
+    diskThroughputCallCount += 1
+    return DiskThroughputReading(readBytesPerSecond: 0, writeBytesPerSecond: 0)
+  }
+
   func readBattery() async -> BatteryReading? {
     batteryCallCount += 1
     return nil
   }
 
-  func callCounts() -> (disk: Int, battery: Int) {
-    (diskCallCount, batteryCallCount)
+  func callCounts() -> (disk: Int, throughput: Int, battery: Int) {
+    (diskCallCount, diskThroughputCallCount, batteryCallCount)
   }
 }
 

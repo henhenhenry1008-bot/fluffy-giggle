@@ -67,6 +67,13 @@ struct PlaceholderDiskService: DiskProviding {
       availableBytes: 251 * PlaceholderUnits.gibibyte
     )
   }
+
+  func readDiskThroughput() async -> DiskThroughputReading? {
+    DiskThroughputReading(
+      readBytesPerSecond: 18 * Double(PlaceholderUnits.mebibyte),
+      writeBytesPerSecond: 6 * Double(PlaceholderUnits.mebibyte)
+    )
+  }
 }
 
 struct PlaceholderBatteryService: BatteryProviding {

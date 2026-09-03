@@ -165,6 +165,20 @@ struct DashboardView: View {
         .font(.caption2)
         .foregroundStyle(.secondary)
         .lineLimit(1)
+
+      diskRate(
+        symbol: "arrow.down",
+        title: "Read",
+        value: viewModel.snapshot.diskReadBytesPerSecond,
+        tint: .green
+      )
+
+      diskRate(
+        symbol: "arrow.up",
+        title: "Write",
+        value: viewModel.snapshot.diskWriteBytesPerSecond,
+        tint: .orange
+      )
     }
   }
 
@@ -276,6 +290,31 @@ struct DashboardView: View {
         .minimumScaleFactor(0.75)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private func diskRate(
+    symbol: String,
+    title: String,
+    value: Double?,
+    tint: Color
+  ) -> some View {
+    HStack(spacing: 4) {
+      Image(systemName: symbol)
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(tint)
+
+      Text(title)
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+
+      Spacer(minLength: 2)
+
+      Text(MetricFormatter.rate(value))
+        .font(.caption2.weight(.medium))
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    }
   }
 
   private var memoryUsage: Double? {

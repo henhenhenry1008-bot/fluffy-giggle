@@ -22,6 +22,8 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
   let diskUsed: UInt64?
   let diskTotal: UInt64?
   let diskAvailable: UInt64?
+  let diskReadBytesPerSecond: Double?
+  let diskWriteBytesPerSecond: Double?
   let batteryPercentage: Double?
   let batteryIsCharging: Bool?
   let batteryIsFullyCharged: Bool?
@@ -49,6 +51,8 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     diskUsed: UInt64?,
     diskTotal: UInt64?,
     diskAvailable: UInt64?,
+    diskReadBytesPerSecond: Double?,
+    diskWriteBytesPerSecond: Double?,
     batteryPercentage: Double?,
     batteryIsCharging: Bool?,
     batteryIsFullyCharged: Bool?,
@@ -75,6 +79,8 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     self.diskUsed = diskUsed
     self.diskTotal = diskTotal
     self.diskAvailable = diskAvailable
+    self.diskReadBytesPerSecond = diskReadBytesPerSecond
+    self.diskWriteBytesPerSecond = diskWriteBytesPerSecond
     self.batteryPercentage = batteryPercentage
     self.batteryIsCharging = batteryIsCharging
     self.batteryIsFullyCharged = batteryIsFullyCharged
@@ -102,6 +108,8 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     diskUsed: nil,
     diskTotal: nil,
     diskAvailable: nil,
+    diskReadBytesPerSecond: nil,
+    diskWriteBytesPerSecond: nil,
     batteryPercentage: nil,
     batteryIsCharging: nil,
     batteryIsFullyCharged: nil,
