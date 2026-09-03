@@ -93,3 +93,28 @@ The experimental, read-only GPU implementation and its short completion review a
 # Phase 22 Application Processes Follow-up
 
 The sandbox-compatible application-process subset and its short review are recorded in [PHASE_22_APP_PROCESSES.md](PHASE_22_APP_PROCESSES.md). SwiftPM and Xcode tests pass 47/47. Timebase conversion, PID reuse, disappearing processes, counter resets, bounded ranking, and sampling cadence are covered. A sandboxed probe confirmed actual readings and checked CPU time conversion against `getrusage`. Full system process enumeration remains deferred. Battery implementation, UI logic, refresh cadence and sandbox entitlements are unchanged.
+
+# Battery Charged-Flag Compatibility Fix
+
+Reviewed on 2026-09-03, following the Phase 22 checkpoint. This is a targeted bug fix, not a new feature or full-project audit.
+
+## Issues found and fixed
+
+- Requiring `kIOPSIsChargedKey` discarded otherwise valid internal-battery descriptions when the system omitted that field. The user's 75/100, charging, AC-power example reproduced the failure in a deterministic test before the fix.
+- The service now preserves an explicitly reported charged flag, including `false`. If absent, it infers full charge from capacity only while connected to AC power. Apple's [charged-key documentation](https://developer.apple.com/documentation/iokit/kiopsischargedkey) requires external power for this status; a just-unplugged battery at 100% must not be inferred as charged.
+- The live battery test previously passed silently on `nil`. It now independently checks for a present internal battery and requires a service reading when one is detected. Batteryless Macs remain supported.
+- Dictionary parsing was extracted only to exercise the actual IOPowerSources boundary in tests. Dashboard rendering, battery sampling cadence, other monitoring services, and refresh settings are unchanged.
+
+## Verification
+
+- Three dictionary-level regression tests cover the missing flag, explicit true/false precedence, capacity boundaries, unplugged full capacity, absent batteries, and invalid required fields. The missing-field tests fail before the production fix and pass afterward.
+- SwiftPM and Xcode Debug tests: 50/50 pass each, with complete strict concurrency checking and Swift/Clang warnings treated as errors where applicable.
+- Strict Swift formatting lint and `git diff --check` pass. No Swift compiler or concurrency warnings were reported. Xcode still emits the unrelated App Intents metadata-skipping warning because the app does not depend on AppIntents.
+- Xcode Release build succeeds for both `arm64` and `x86_64`. The local runnable app was updated and its ad-hoc signature verified.
+- The computer-use skill was used to open the rebuilt sandboxed application and inspect the actual dashboard. Battery showed 80% and On AC Power on this Mac; the missing-field scenario is guaranteed by the synthetic regression tests, not by assuming the live system always omits the key.
+
+## Files changed and limitations
+
+- Changed `Services/BatteryService.swift`, `Tests/PulseBarTests/PulseBarTests.swift`, and this audit record.
+- The capacity fallback is deliberately conservative and does not reproduce every optimized-charging policy. Other missing required fields still produce an unavailable reading, and optional health/time fields remain system-dependent.
+- Runtime checks used the current Apple Silicon Mac; Intel was compile-checked only. Long-running profiling, older macOS testing, and distribution signing were not performed for this fix.

@@ -21,45 +21,48 @@ actor BatteryService: BatteryProviding {
       // The description is owned by the retained information snapshot and
       // must not be released independently.
       let description = descriptionReference.takeUnretainedValue() as NSDictionary
-      guard description[kIOPSTypeKey] as? String == kIOPSInternalBatteryType else {
-        continue
-      }
-
-      let isPresent = (description[kIOPSIsPresentKey] as? NSNumber)?.boolValue ?? true
-      guard isPresent else { continue }
-
-      guard let currentCapacity = (description[kIOPSCurrentCapacityKey] as? NSNumber)?.intValue,
-        let maximumCapacity = (description[kIOPSMaxCapacityKey] as? NSNumber)?.intValue,
-        let isCharging = (description[kIOPSIsChargingKey] as? NSNumber)?.boolValue,
-        let isFullyCharged = (description[kIOPSIsChargedKey] as? NSNumber)?.boolValue,
-        let powerSourceState = description[kIOPSPowerSourceStateKey] as? String,
-        powerSourceState == kIOPSACPowerValue || powerSourceState == kIOPSBatteryPowerValue
-      else {
-        continue
-      }
-
-      guard
-        let reading = Self.makeReading(
-          currentCapacity: currentCapacity,
-          maximumCapacity: maximumCapacity,
-          isCharging: isCharging,
-          isFullyCharged: isFullyCharged,
-          isACPowered: powerSourceState == kIOPSACPowerValue,
-          healthStatus: Self.preferredHealthStatus(
-            condition: description[kIOPSBatteryHealthConditionKey] as? String,
-            estimate: description[kIOPSBatteryHealthKey] as? String
-          ),
-          timeToEmptyMinutes: (description[kIOPSTimeToEmptyKey] as? NSNumber)?.intValue,
-          timeToFullChargeMinutes: (description[kIOPSTimeToFullChargeKey] as? NSNumber)?.intValue
-        )
-      else {
-        continue
-      }
-      return reading
+      if let reading = Self.makeReading(from: description) { return reading }
     }
 
     // Desktop Macs and systems without a present internal battery arrive here.
     return nil
+  }
+
+  // Keep dictionary parsing testable without requiring a particular Mac or
+  // changing its live charging state.
+  static func makeReading(from description: NSDictionary) -> BatteryReading? {
+    guard description[kIOPSTypeKey] as? String == kIOPSInternalBatteryType else { return nil }
+
+    let isPresent = (description[kIOPSIsPresentKey] as? NSNumber)?.boolValue ?? true
+    guard isPresent else { return nil }
+
+    guard let currentCapacity = (description[kIOPSCurrentCapacityKey] as? NSNumber)?.intValue,
+      let maximumCapacity = (description[kIOPSMaxCapacityKey] as? NSNumber)?.intValue,
+      let isCharging = (description[kIOPSIsChargingKey] as? NSNumber)?.boolValue,
+      let powerSourceState = description[kIOPSPowerSourceStateKey] as? String,
+      powerSourceState == kIOPSACPowerValue || powerSourceState == kIOPSBatteryPowerValue
+    else { return nil }
+
+    let isACPowered = powerSourceState == kIOPSACPowerValue
+    // Some system snapshots omit this flag. Preserve an explicit system value;
+    // otherwise infer full charge only at full capacity on external power.
+    let isFullyCharged =
+      (description[kIOPSIsChargedKey] as? NSNumber)?.boolValue
+      ?? (isACPowered && currentCapacity >= maximumCapacity)
+
+    return makeReading(
+      currentCapacity: currentCapacity,
+      maximumCapacity: maximumCapacity,
+      isCharging: isCharging,
+      isFullyCharged: isFullyCharged,
+      isACPowered: isACPowered,
+      healthStatus: preferredHealthStatus(
+        condition: description[kIOPSBatteryHealthConditionKey] as? String,
+        estimate: description[kIOPSBatteryHealthKey] as? String
+      ),
+      timeToEmptyMinutes: (description[kIOPSTimeToEmptyKey] as? NSNumber)?.intValue,
+      timeToFullChargeMinutes: (description[kIOPSTimeToFullChargeKey] as? NSNumber)?.intValue
+    )
   }
 
   static func makeReading(

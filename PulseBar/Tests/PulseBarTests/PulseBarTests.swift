@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import IOKit.ps
 import Testing
 
 @testable import PulseBar
@@ -951,9 +952,94 @@ struct PulseBarTests {
     }
   }
 
+  @Test("Battery descriptions remain readable when the charged key is absent")
+  func batteryDescriptionMissingCharged() throws {
+    let description: NSDictionary = [
+      kIOPSTypeKey: kIOPSInternalBatteryType,
+      kIOPSCurrentCapacityKey: 75,
+      kIOPSMaxCapacityKey: 100,
+      kIOPSIsChargingKey: true,
+      kIOPSPowerSourceStateKey: kIOPSACPowerValue,
+      kIOPSTimeToFullChargeKey: 30,
+    ]
+    let reading = try #require(BatteryService.makeReading(from: description))
+    #expect(reading.percentage == 0.75)
+    #expect(reading.isCharging)
+    #expect(reading.isACPowered)
+    #expect(!reading.isFullyCharged)
+    #expect(reading.timeToFullChargeMinutes == 30)
+  }
+
+  @Test("Battery charged fallback uses capacity but explicit system flags take precedence")
+  func batteryDescriptionChargedFallback() throws {
+    for capacity in [0, 75, 95, 100, 120] {
+      for charged in [nil, false, true] as [Bool?] {
+        var description: [String: Any] = [
+          kIOPSTypeKey: kIOPSInternalBatteryType,
+          kIOPSCurrentCapacityKey: capacity,
+          kIOPSMaxCapacityKey: 100,
+          kIOPSIsChargingKey: false,
+          kIOPSPowerSourceStateKey: kIOPSACPowerValue,
+        ]
+        if let charged { description[kIOPSIsChargedKey] = charged }
+        let reading = try #require(BatteryService.makeReading(from: description as NSDictionary))
+        #expect(reading.isFullyCharged == (charged ?? (capacity >= 100)))
+        #expect(reading.percentage == min(Double(capacity) / 100, 1))
+      }
+    }
+
+    let unplugged: NSDictionary = [
+      kIOPSTypeKey: kIOPSInternalBatteryType,
+      kIOPSCurrentCapacityKey: 100,
+      kIOPSMaxCapacityKey: 100,
+      kIOPSIsChargingKey: false,
+      kIOPSPowerSourceStateKey: kIOPSBatteryPowerValue,
+      kIOPSTimeToEmptyKey: 90,
+    ]
+    let reading = try #require(BatteryService.makeReading(from: unplugged))
+    #expect(reading.percentage == 1)
+    #expect(!reading.isFullyCharged)
+    #expect(!reading.isACPowered)
+    #expect(reading.timeToEmptyMinutes == 90)
+  }
+
+  @Test("Battery descriptions still reject absent batteries and invalid required fields")
+  func batteryDescriptionInvalidFields() {
+    let valid: [String: Any] = [
+      kIOPSTypeKey: kIOPSInternalBatteryType,
+      kIOPSCurrentCapacityKey: 75,
+      kIOPSMaxCapacityKey: 100,
+      kIOPSIsChargingKey: true,
+      kIOPSPowerSourceStateKey: kIOPSACPowerValue,
+    ]
+    for (key, value) in [
+      (kIOPSTypeKey, "UPS" as Any),
+      (kIOPSIsPresentKey, false as Any),
+      (kIOPSCurrentCapacityKey, -1 as Any),
+      (kIOPSMaxCapacityKey, 0 as Any),
+      (kIOPSPowerSourceStateKey, "Unknown" as Any),
+    ] {
+      var description = valid
+      description[key] = value
+      #expect(BatteryService.makeReading(from: description as NSDictionary) == nil)
+    }
+    for key in [
+      kIOPSCurrentCapacityKey, kIOPSMaxCapacityKey, kIOPSIsChargingKey, kIOPSPowerSourceStateKey,
+    ] {
+      var description = valid
+      description.removeValue(forKey: key)
+      #expect(BatteryService.makeReading(from: description as NSDictionary) == nil)
+    }
+  }
+
   @Test("Battery service supports battery-equipped and batteryless Macs")
   func liveBatteryReading() async {
-    guard let reading = await BatteryService().readBattery() else {
+    let hasBattery = hasPresentInternalBattery()
+    let result = await BatteryService().readBattery()
+    if hasBattery == true {
+      #expect(result != nil, "A present internal battery must not silently become unavailable")
+    }
+    guard let reading = result else {
       return
     }
 
@@ -974,6 +1060,21 @@ struct PulseBarTests {
     if let healthStatus = reading.healthStatus {
       #expect(!healthStatus.isEmpty)
       #expect(healthStatus == healthStatus.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+  }
+
+  private func hasPresentInternalBattery() -> Bool? {
+    guard let information = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+      let sources = IOPSCopyPowerSourcesList(information)?.takeRetainedValue() as? [AnyObject]
+    else { return nil }
+
+    return sources.contains { source in
+      guard
+        let description = IOPSGetPowerSourceDescription(information, source)?
+          .takeUnretainedValue() as? [String: Any]
+      else { return false }
+      return description[kIOPSTypeKey] as? String == kIOPSInternalBatteryType
+        && ((description[kIOPSIsPresentKey] as? NSNumber)?.boolValue ?? true)
     }
   }
 }
