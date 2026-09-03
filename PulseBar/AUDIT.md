@@ -118,3 +118,14 @@ Reviewed on 2026-09-03, following the Phase 22 checkpoint. This is a targeted bu
 - Changed `Services/BatteryService.swift`, `Tests/PulseBarTests/PulseBarTests.swift`, and this audit record.
 - The capacity fallback is deliberately conservative and does not reproduce every optimized-charging policy. Other missing required fields still produce an unavailable reading, and optional health/time fields remain system-dependent.
 - Runtime checks used the current Apple Silicon Mac; Intel was compile-checked only. Long-running profiling, older macOS testing, and distribution signing were not performed for this fix.
+
+# Phase 23 CPU Core Composition Follow-up
+
+The next advanced CPU increment and its rough review are recorded in
+[PHASE_23_CPU_TOPOLOGY.md](PHASE_23_CPU_TOPOLOGY.md). The previous 50-test baseline
+and final 59-test SwiftPM/Xcode suites pass. The sandboxed runnable app displays
+the live 6 Super / 12 Performance breakdown and physical/logical totals. Hardware
+counts are validated and cached; no P/E-to-core-index mapping is assumed. Light
+and Dark appearance were checked through the computer-use skill. Existing battery
+behavior, refresh choices/default, and entitlements remain unchanged. The phase
+report lists the exact files changed and remaining hardware/runtime limitations.

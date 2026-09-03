@@ -6,6 +6,10 @@ protocol PerCoreCPUProviding: Sendable {
   func readPerCoreCPUUsage() async -> [Double?]
 }
 
+protocol CPUTopologyProviding: Sendable {
+  func readCPUTopology() async -> CPUTopologyReading?
+}
+
 protocol GPUProviding: Sendable {
   func readGPUs() async -> [GPUDeviceReading]
 }

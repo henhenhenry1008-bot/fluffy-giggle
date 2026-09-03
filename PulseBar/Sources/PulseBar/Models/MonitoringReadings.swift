@@ -1,3 +1,17 @@
+struct CPUTopologyReading: Equatable, Sendable {
+  let physicalCoreCount: Int
+  let logicalCoreCount: Int
+  // nil means the breakdown is unavailable, not that this CPU has no cores.
+  let performanceLevels: [CPUPerformanceLevelReading]?
+}
+
+struct CPUPerformanceLevelReading: Identifiable, Equatable, Sendable {
+  let id: Int
+  let name: String
+  let physicalCoreCount: Int
+  let logicalCoreCount: Int
+}
+
 struct AppProcessID: Hashable, Sendable {
   let pid: Int32
   let startSeconds: UInt64

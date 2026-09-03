@@ -28,6 +28,19 @@ struct PlaceholderPerCoreCPUService: PerCoreCPUProviding {
   }
 }
 
+struct PlaceholderCPUTopologyService: CPUTopologyProviding {
+  func readCPUTopology() async -> CPUTopologyReading? {
+    CPUTopologyReading(
+      physicalCoreCount: 8, logicalCoreCount: 8,
+      performanceLevels: [
+        CPUPerformanceLevelReading(
+          id: 0, name: "Performance", physicalCoreCount: 4, logicalCoreCount: 4),
+        CPUPerformanceLevelReading(
+          id: 1, name: "Efficiency", physicalCoreCount: 4, logicalCoreCount: 4),
+      ])
+  }
+}
+
 struct PlaceholderGPUService: GPUProviding {
   let devices: [GPUDeviceReading]
 

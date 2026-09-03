@@ -5,6 +5,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
   let timestamp: Date
   let cpuUsage: Double?
   let cpuCoreUsages: [Double?]
+  let cpuTopology: CPUTopologyReading?
   let gpuDevices: [GPUDeviceReading]
   let appProcesses: AppProcessListReading?
   let memoryUsed: UInt64?
@@ -39,6 +40,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     timestamp: Date,
     cpuUsage: Double?,
     cpuCoreUsages: [Double?],
+    cpuTopology: CPUTopologyReading? = nil,
     gpuDevices: [GPUDeviceReading],
     appProcesses: AppProcessListReading? = nil,
     memoryUsed: UInt64?,
@@ -72,6 +74,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     self.timestamp = timestamp
     self.cpuUsage = cpuUsage
     self.cpuCoreUsages = cpuCoreUsages
+    self.cpuTopology = cpuTopology
     self.gpuDevices = gpuDevices
     self.appProcesses = appProcesses
     self.memoryUsed = memoryUsed

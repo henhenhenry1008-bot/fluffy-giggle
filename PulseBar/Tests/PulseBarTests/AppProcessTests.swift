@@ -121,6 +121,7 @@ struct AppProcessTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      cpuTopologyProvider: PlaceholderCPUTopologyService(),
       gpuProvider: PlaceholderGPUService(),
       appProcessProvider: provider,
       memoryProvider: PlaceholderMemoryService(),

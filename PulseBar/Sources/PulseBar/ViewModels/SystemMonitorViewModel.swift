@@ -19,6 +19,7 @@ final class SystemMonitorViewModel: ObservableObject {
   private var batteryCache: CachedReading<BatteryReading>?
   private let cpuProvider: any CPUProviding
   private let perCoreCPUProvider: any PerCoreCPUProviding
+  private let cpuTopologyProvider: any CPUTopologyProviding
   private let gpuProvider: any GPUProviding
   private let appProcessProvider: any AppProcessProviding
   private let memoryProvider: any MemoryProviding
@@ -32,6 +33,7 @@ final class SystemMonitorViewModel: ObservableObject {
   init(
     cpuProvider: any CPUProviding = CPUService(),
     perCoreCPUProvider: any PerCoreCPUProviding = PerCoreCPUService(),
+    cpuTopologyProvider: any CPUTopologyProviding = CPUTopologyService(),
     gpuProvider: any GPUProviding = GPUService(),
     appProcessProvider: any AppProcessProviding = AppProcessService(),
     memoryProvider: any MemoryProviding = MemoryService(),
@@ -47,6 +49,7 @@ final class SystemMonitorViewModel: ObservableObject {
   ) {
     self.cpuProvider = cpuProvider
     self.perCoreCPUProvider = perCoreCPUProvider
+    self.cpuTopologyProvider = cpuTopologyProvider
     self.gpuProvider = gpuProvider
     self.appProcessProvider = appProcessProvider
     self.memoryProvider = memoryProvider
@@ -184,6 +187,7 @@ final class SystemMonitorViewModel: ObservableObject {
     async let appProcesses = appProcessProvider.readAppProcesses()
     async let cpuUsage = cpuProvider.readCPUUsage()
     async let cpuCoreUsages = perCoreCPUProvider.readPerCoreCPUUsage()
+    async let cpuTopology = cpuTopologyProvider.readCPUTopology()
     async let gpuDevices = gpuProvider.readGPUs()
     async let memory = memoryProvider.readMemory()
     async let network = networkProvider.readNetwork()
@@ -207,6 +211,7 @@ final class SystemMonitorViewModel: ObservableObject {
       latestDiskThroughput, latestAppProcesses
     ) =
       await (cpuUsage, cpuCoreUsages, gpuDevices, memory, network, diskThroughput, appProcesses)
+    let latestTopology = await cpuTopology
 
     // A canceled automatic sample should not publish after monitoring stops or
     // an interval change replaces its loop.
@@ -223,6 +228,7 @@ final class SystemMonitorViewModel: ObservableObject {
       timestamp: sampleTime,
       cpuUsage: latestCPUUsage,
       cpuCoreUsages: latestCoreUsages,
+      cpuTopology: latestTopology,
       gpuDevices: latestGPUs,
       appProcesses: latestAppProcesses,
       memoryUsed: latestMemory?.usedBytes,

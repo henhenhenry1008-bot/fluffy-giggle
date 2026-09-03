@@ -123,7 +123,45 @@ struct DashboardView: View {
       .frame(height: 40)
 
       CoreUsageStrip(usages: viewModel.snapshot.cpuCoreUsages)
+
+      cpuTopologyDetails
     }
+  }
+
+  private var cpuTopologyDetails: some View {
+    VStack(alignment: .leading, spacing: 3) {
+      if let topology = viewModel.snapshot.cpuTopology {
+        Text("\(topology.physicalCoreCount) physical · \(topology.logicalCoreCount) logical")
+          .fixedSize(horizontal: false, vertical: true)
+
+        if let levels = topology.performanceLevels {
+          ForEach(levels) { level in
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+              Text(level.name)
+                .lineLimit(1)
+                .help(level.name)
+              Spacer(minLength: 0)
+              Text("\(level.physicalCoreCount) cores")
+                .fixedSize()
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(level.name)
+            .accessibilityValue(
+              "\(level.physicalCoreCount) physical cores, \(level.logicalCoreCount) logical cores")
+          }
+        } else {
+          Text("Core types unavailable")
+        }
+      } else {
+        Text("Core topology unavailable")
+      }
+    }
+    .font(.caption2)
+    .foregroundStyle(.secondary)
+    .monospacedDigit()
+    .help(
+      "System-reported hardware core counts, not active cores. Core types are not mapped to the usage bars above."
+    )
   }
 
   private var gpuCard: some View {

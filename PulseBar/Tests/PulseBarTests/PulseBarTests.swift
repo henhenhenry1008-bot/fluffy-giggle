@@ -125,6 +125,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(usage: 0.32),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(usages: [0.2, 0.4]),
+      cpuTopologyProvider: PlaceholderCPUTopologyService(),
       gpuProvider: PlaceholderGPUService(),
       appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
@@ -186,6 +187,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      cpuTopologyProvider: PlaceholderCPUTopologyService(),
       gpuProvider: PlaceholderGPUService(),
       appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
@@ -295,6 +297,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      cpuTopologyProvider: PlaceholderCPUTopologyService(),
       gpuProvider: PlaceholderGPUService(),
       appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
@@ -329,6 +332,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      cpuTopologyProvider: PlaceholderCPUTopologyService(),
       gpuProvider: PlaceholderGPUService(),
       appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
@@ -356,6 +360,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: cpuProvider,
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      cpuTopologyProvider: PlaceholderCPUTopologyService(),
       gpuProvider: PlaceholderGPUService(),
       appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
@@ -391,6 +396,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      cpuTopologyProvider: PlaceholderCPUTopologyService(),
       gpuProvider: PlaceholderGPUService(),
       appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
@@ -807,6 +813,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      cpuTopologyProvider: PlaceholderCPUTopologyService(),
       gpuProvider: provider,
       appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
