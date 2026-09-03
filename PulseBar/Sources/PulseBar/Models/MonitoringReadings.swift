@@ -1,3 +1,23 @@
+struct AppProcessID: Hashable, Sendable {
+  let pid: Int32
+  let startSeconds: UInt64
+  let startMicroseconds: UInt64
+}
+
+struct AppProcessReading: Identifiable, Equatable, Sendable {
+  let id: AppProcessID
+  let name: String
+  let cpuUsage: Double?
+  let residentBytes: UInt64
+}
+
+struct AppProcessListReading: Equatable, Sendable {
+  let topProcesses: [AppProcessReading]
+  let listedCount: Int
+  let queriedCount: Int
+  let readableCount: Int
+}
+
 struct GPUDeviceReading: Identifiable, Equatable, Sendable {
   let id: UInt64
   let name: String

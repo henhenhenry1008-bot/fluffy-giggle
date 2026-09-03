@@ -4,7 +4,7 @@ import SwiftUI
 struct SettingsView: View {
   @StateObject private var launchAtLogin = LaunchAtLoginController()
   @AppStorage(AppPreferenceKey.refreshInterval) private var refreshIntervalValue =
-    MonitoringRefreshInterval.oneSecond.rawValue
+    MonitoringRefreshInterval.standard.rawValue
   @AppStorage(AppPreferenceKey.historyLength) private var historyLengthValue =
     MonitoringHistoryLength.twoMinutes.rawValue
   @AppStorage(AppPreferenceKey.networkDisplayUnit) private var networkDisplayUnitValue =

@@ -1,6 +1,13 @@
 import Foundation
 
 enum MetricFormatter {
+  static func processCPU(_ fraction: Double?) -> String {
+    guard let fraction, fraction.isFinite, fraction >= 0, (fraction * 100).isFinite else {
+      return "—"
+    }
+    return String(format: "%.1f%%", fraction * 100)
+  }
+
   static func percentage(_ fraction: Double?) -> String {
     guard let fraction, fraction.isFinite else { return "Unavailable" }
     return String(format: "%.0f%%", min(max(fraction, 0), 1) * 100)

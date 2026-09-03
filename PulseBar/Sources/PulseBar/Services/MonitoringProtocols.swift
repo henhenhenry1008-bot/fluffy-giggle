@@ -10,6 +10,10 @@ protocol GPUProviding: Sendable {
   func readGPUs() async -> [GPUDeviceReading]
 }
 
+protocol AppProcessProviding: Sendable {
+  func readAppProcesses() async -> AppProcessListReading?
+}
+
 protocol MemoryProviding: Sendable {
   func readMemory() async -> MemoryReading?
 }

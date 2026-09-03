@@ -16,6 +16,8 @@ Experimental GPU monitoring identifies devices with Metal and reads each device'
 
 Automatic sampling keeps total CPU, per-core CPU, GPU, memory, network, and disk-throughput readings at the selected refresh interval. Disk capacity is refreshed at most every 30 seconds and battery state every 5 seconds, while a manual refresh updates every metric. Static memory configuration is cached after its first successful read, history storage remains bounded, and automatic samples publish one consolidated snapshot update to SwiftUI.
 
+Phase 22 adds an application-process Top CPU list, with resident memory and readable/listed coverage counts. It uses public workspace/task APIs with the existing sandbox, follows the selected refresh interval, and keeps only five rows per snapshot. All four refresh options remain available: **0.5, 1, 2 and 5 seconds**, with **2 seconds as the default**; existing saved choices are preserved. CPU percentages use one core as 100% and may exceed it. This is not a full system process list or an aggregate of each app's helper processes. Battery behavior is unchanged. See [PHASE_22_APP_PROCESSES.md](PHASE_22_APP_PROCESSES.md) for the scope, 47-test verification, and remaining limitations.
+
 The Phase 14 optimization notes and remaining runtime profiling work are recorded in `PERFORMANCE.md`.
 
 The Phase 15 full-project correctness review and Phase 20 battery-details completion review are recorded in `AUDIT.md`.

@@ -40,6 +40,10 @@ struct PlaceholderGPUService: GPUProviding {
   }
 }
 
+struct PlaceholderAppProcessService: AppProcessProviding {
+  func readAppProcesses() async -> AppProcessListReading? { nil }
+}
+
 struct PlaceholderMemoryService: MemoryProviding {
   func readMemory() async -> MemoryReading? {
     let total = 18 * PlaceholderUnits.gibibyte

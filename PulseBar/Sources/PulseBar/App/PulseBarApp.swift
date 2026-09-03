@@ -5,7 +5,7 @@ import SwiftUI
 struct PulseBarApp: App {
   @StateObject private var monitor = SystemMonitorViewModel()
   @AppStorage(AppPreferenceKey.refreshInterval) private var refreshIntervalValue =
-    MonitoringRefreshInterval.oneSecond.rawValue
+    MonitoringRefreshInterval.standard.rawValue
   @AppStorage(AppPreferenceKey.historyLength) private var historyLengthValue =
     MonitoringHistoryLength.twoMinutes.rawValue
   @AppStorage(AppPreferenceKey.appearance) private var appearanceValue =
@@ -23,7 +23,7 @@ struct PulseBarApp: App {
         }
         .onChange(of: refreshIntervalValue) { _, newValue in
           let interval =
-            MonitoringRefreshInterval(rawValue: newValue) ?? .oneSecond
+            MonitoringRefreshInterval(rawValue: newValue) ?? .standard
           monitor.changeRefreshInterval(to: interval)
         }
         .onChange(of: historyLengthValue) { _, newValue in
@@ -52,7 +52,7 @@ struct PulseBarApp: App {
 
   private func applyStoredMonitoringPreferences() {
     let interval =
-      MonitoringRefreshInterval(rawValue: refreshIntervalValue) ?? .oneSecond
+      MonitoringRefreshInterval(rawValue: refreshIntervalValue) ?? .standard
     let historyCapacity =
       MonitoringHistoryLength(rawValue: historyLengthValue)?.rawValue
       ?? MonitoringHistoryLength.twoMinutes.rawValue

@@ -20,6 +20,7 @@ final class SystemMonitorViewModel: ObservableObject {
   private let cpuProvider: any CPUProviding
   private let perCoreCPUProvider: any PerCoreCPUProviding
   private let gpuProvider: any GPUProviding
+  private let appProcessProvider: any AppProcessProviding
   private let memoryProvider: any MemoryProviding
   private let networkProvider: any NetworkProviding
   private let diskProvider: any DiskProviding
@@ -32,12 +33,13 @@ final class SystemMonitorViewModel: ObservableObject {
     cpuProvider: any CPUProviding = CPUService(),
     perCoreCPUProvider: any PerCoreCPUProviding = PerCoreCPUService(),
     gpuProvider: any GPUProviding = GPUService(),
+    appProcessProvider: any AppProcessProviding = AppProcessService(),
     memoryProvider: any MemoryProviding = MemoryService(),
     networkProvider: any NetworkProviding = NetworkService(),
     diskProvider: any DiskProviding = DiskService(),
     batteryProvider: any BatteryProviding = BatteryService(),
     initialSnapshot: SystemSnapshot = .empty,
-    refreshInterval: MonitoringRefreshInterval = .oneSecond,
+    refreshInterval: MonitoringRefreshInterval = .standard,
     historyCapacity: Int = 120,
     diskRefreshInterval: TimeInterval = defaultDiskRefreshInterval,
     batteryRefreshInterval: TimeInterval = defaultBatteryRefreshInterval,
@@ -46,6 +48,7 @@ final class SystemMonitorViewModel: ObservableObject {
     self.cpuProvider = cpuProvider
     self.perCoreCPUProvider = perCoreCPUProvider
     self.gpuProvider = gpuProvider
+    self.appProcessProvider = appProcessProvider
     self.memoryProvider = memoryProvider
     self.networkProvider = networkProvider
     self.diskProvider = diskProvider
@@ -178,6 +181,7 @@ final class SystemMonitorViewModel: ObservableObject {
         minimumInterval: batteryRefreshInterval
       )
 
+    async let appProcesses = appProcessProvider.readAppProcesses()
     async let cpuUsage = cpuProvider.readCPUUsage()
     async let cpuCoreUsages = perCoreCPUProvider.readPerCoreCPUUsage()
     async let gpuDevices = gpuProvider.readGPUs()
@@ -200,9 +204,9 @@ final class SystemMonitorViewModel: ObservableObject {
 
     let (
       latestCPUUsage, latestCoreUsages, latestGPUs, latestMemory, latestNetwork,
-      latestDiskThroughput
+      latestDiskThroughput, latestAppProcesses
     ) =
-      await (cpuUsage, cpuCoreUsages, gpuDevices, memory, network, diskThroughput)
+      await (cpuUsage, cpuCoreUsages, gpuDevices, memory, network, diskThroughput, appProcesses)
 
     // A canceled automatic sample should not publish after monitoring stops or
     // an interval change replaces its loop.
@@ -220,6 +224,7 @@ final class SystemMonitorViewModel: ObservableObject {
       cpuUsage: latestCPUUsage,
       cpuCoreUsages: latestCoreUsages,
       gpuDevices: latestGPUs,
+      appProcesses: latestAppProcesses,
       memoryUsed: latestMemory?.usedBytes,
       memoryTotal: latestMemory?.totalBytes,
       memoryAvailable: latestMemory?.availableBytes,

@@ -31,6 +31,7 @@ struct DashboardView: View {
 
           gpuCard
           networkCard
+          appProcessCard
         }
       }
       .frame(height: 520)
@@ -299,6 +300,59 @@ struct DashboardView: View {
         accessibilityLabel: "Network throughput history"
       )
       .frame(height: 48)
+    }
+  }
+
+  private var appProcessCard: some View {
+    MetricCard(title: "App processes · Top CPU", systemImage: "list.bullet", tint: .blue) {
+      if let list = viewModel.snapshot.appProcesses, !list.topProcesses.isEmpty {
+        HStack {
+          Text("Process")
+          Spacer()
+          Text("CPU").frame(width: 65, alignment: .trailing)
+          Text("Resident").frame(width: 72, alignment: .trailing)
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+
+        ForEach(list.topProcesses) { process in
+          HStack(spacing: 6) {
+            Text(process.name)
+              .lineLimit(1)
+              .truncationMode(.middle)
+              .help("\(process.name) · PID \(process.id.pid)")
+            Spacer(minLength: 0)
+            Text(MetricFormatter.processCPU(process.cpuUsage))
+              .frame(width: 65, alignment: .trailing)
+            Text(MetricFormatter.bytes(process.residentBytes))
+              .frame(width: 72, alignment: .trailing)
+          }
+          .font(.caption)
+          .monospacedDigit()
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+        }
+      } else {
+        Text("Unavailable")
+          .foregroundStyle(.secondary)
+      }
+
+      if let list = viewModel.snapshot.appProcesses {
+        Text("Readable \(list.readableCount) of \(list.listedCount) listed app processes")
+          .font(.caption2)
+          .foregroundStyle(.secondary)
+        if list.queriedCount < list.listedCount {
+          Text("Limited to \(list.queriedCount) candidates")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+      }
+      Text("100% CPU = one core · Apps only")
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .help(
+          "Not a complete system process list. Child processes are not grouped. Resident memory is not Activity Monitor's memory footprint. A dash means CPU is awaiting a valid interval. Follows the refresh interval selected in Settings."
+        )
     }
   }
 

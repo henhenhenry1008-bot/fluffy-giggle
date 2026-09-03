@@ -89,3 +89,7 @@ Phase checkpoint: `codex/phase-20-battery-health-estimates`. The preceding check
 # Phase 21 GPU Follow-up
 
 The experimental, read-only GPU implementation and its short completion review are recorded in [PHASE_21_GPU.md](PHASE_21_GPU.md). SwiftPM and Xcode tests now pass 40/40, and a sandboxed probe using the actual GPU service returned valid live readings on macOS 26.5 / Apple M5 Pro. The earlier reviews remain historical records; GPU driver compatibility and the remaining UI/runtime checks are described in the Phase 21 report.
+
+# Phase 22 Application Processes Follow-up
+
+The sandbox-compatible application-process subset and its short review are recorded in [PHASE_22_APP_PROCESSES.md](PHASE_22_APP_PROCESSES.md). SwiftPM and Xcode tests pass 47/47. Timebase conversion, PID reuse, disappearing processes, counter resets, bounded ranking, and sampling cadence are covered. A sandboxed probe confirmed actual readings and checked CPU time conversion against `getrusage`. Full system process enumeration remains deferred. Battery implementation, UI logic, refresh cadence and sandbox entitlements are unchanged.

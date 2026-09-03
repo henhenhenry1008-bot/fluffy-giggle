@@ -4,6 +4,8 @@ enum MonitoringRefreshInterval: Double, CaseIterable, Identifiable, Sendable {
   case twoSeconds = 2
   case fiveSeconds = 5
 
+  static let standard: Self = .twoSeconds
+
   var id: Double { rawValue }
 
   var duration: Duration {

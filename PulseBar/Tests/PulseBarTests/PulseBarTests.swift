@@ -125,6 +125,7 @@ struct PulseBarTests {
       cpuProvider: PlaceholderCPUService(usage: 0.32),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(usages: [0.2, 0.4]),
       gpuProvider: PlaceholderGPUService(),
+      appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -185,6 +186,7 @@ struct PulseBarTests {
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       gpuProvider: PlaceholderGPUService(),
+      appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -278,6 +280,7 @@ struct PulseBarTests {
 
   @Test("Refresh intervals expose the four supported cadences")
   func refreshIntervals() {
+    #expect(MonitoringRefreshInterval.standard == .twoSeconds)
     #expect(
       MonitoringRefreshInterval.allCases.map(\.rawValue)
         == [0.5, 1, 2, 5])
@@ -292,6 +295,7 @@ struct PulseBarTests {
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       gpuProvider: PlaceholderGPUService(),
+      appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -299,7 +303,7 @@ struct PulseBarTests {
     )
 
     #expect(!viewModel.isMonitoring)
-    #expect(viewModel.refreshInterval == .oneSecond)
+    #expect(viewModel.refreshInterval == .twoSeconds)
 
     viewModel.startMonitoring()
     viewModel.startMonitoring()
@@ -325,6 +329,7 @@ struct PulseBarTests {
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       gpuProvider: PlaceholderGPUService(),
+      appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -351,6 +356,7 @@ struct PulseBarTests {
       cpuProvider: cpuProvider,
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       gpuProvider: PlaceholderGPUService(),
+      appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: slowMetricProvider,
@@ -385,6 +391,7 @@ struct PulseBarTests {
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       gpuProvider: PlaceholderGPUService(),
+      appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: slowMetricProvider,
@@ -800,6 +807,7 @@ struct PulseBarTests {
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
       gpuProvider: provider,
+      appProcessProvider: PlaceholderAppProcessService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
