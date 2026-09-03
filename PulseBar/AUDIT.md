@@ -85,3 +85,7 @@ Reviewed on 2026-09-03. This is a short follow-up review, not a release certific
 - This unsigned archive does not validate Launch at Login, TestFlight distribution, signing, or notarization. Long-running Instruments checks remain deferred.
 
 Phase checkpoint: `codex/phase-20-battery-health-estimates`. The preceding checkpoint remains `codex/phase-19-disk-throughput`.
+
+# Phase 21 GPU Follow-up
+
+The experimental, read-only GPU implementation and its short completion review are recorded in [PHASE_21_GPU.md](PHASE_21_GPU.md). SwiftPM and Xcode tests now pass 40/40, and a sandboxed probe using the actual GPU service returned valid live readings on macOS 26.5 / Apple M5 Pro. The earlier reviews remain historical records; GPU driver compatibility and the remaining UI/runtime checks are described in the Phase 21 report.

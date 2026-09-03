@@ -124,6 +124,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(usage: 0.32),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(usages: [0.2, 0.4]),
+      gpuProvider: PlaceholderGPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -134,6 +135,7 @@ struct PulseBarTests {
 
     #expect(viewModel.snapshot.cpuUsage == 0.32)
     #expect(viewModel.snapshot.cpuCoreUsages == [0.2, 0.4])
+    #expect(viewModel.snapshot.gpuUsage(for: 1) == 0.42)
     #expect(viewModel.snapshot.memoryUsed != nil)
     #expect(viewModel.snapshot.memoryCached == UInt64(3) * 1_024 * 1_024 * 1_024)
     #expect(viewModel.snapshot.swapUsed == UInt64(512) * 1_024 * 1_024)
@@ -182,6 +184,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      gpuProvider: PlaceholderGPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -288,6 +291,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      gpuProvider: PlaceholderGPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -320,6 +324,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      gpuProvider: PlaceholderGPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: PlaceholderDiskService(),
@@ -345,6 +350,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: cpuProvider,
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      gpuProvider: PlaceholderGPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: slowMetricProvider,
@@ -378,6 +384,7 @@ struct PulseBarTests {
     let viewModel = SystemMonitorViewModel(
       cpuProvider: PlaceholderCPUService(),
       perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      gpuProvider: PlaceholderGPUService(),
       memoryProvider: PlaceholderMemoryService(),
       networkProvider: PlaceholderNetworkService(),
       diskProvider: slowMetricProvider,
@@ -762,6 +769,82 @@ struct PulseBarTests {
     #expect(reading.writeBytesPerSecond.isFinite)
   }
 
+  @Test("GPU percentages reject malformed or unsupported driver statistics")
+  func gpuUsageValidation() {
+    #expect(GPUService.usage(from: ["Device Utilization %": 42]) == 0.42)
+    #expect(GPUService.usage(from: ["Device Utilization %": 12.5]) == 0.125)
+    #expect(GPUService.usage(from: ["Device Utilization %": 0]) == 0)
+    #expect(GPUService.usage(from: ["Device Utilization %": 1]) == 0.01)
+    #expect(GPUService.usage(from: ["Device Utilization %": 100]) == 1)
+    #expect(GPUService.usage(from: nil) == nil)
+    #expect(GPUService.usage(from: [:]) == nil)
+    #expect(
+      GPUService.usage(from: ["Renderer Utilization %": 60, "Tiler Utilization %": 40]) == nil)
+    #expect(GPUService.usage(from: ["Device Utilization %": "42"]) == nil)
+    #expect(GPUService.usage(from: ["Device Utilization %": true]) == nil)
+    #expect(GPUService.usage(from: ["Device Utilization %": false]) == nil)
+    #expect(GPUService.usage(from: ["Device Utilization %": NSNull()]) == nil)
+    for value in [-1.0, 100.1, Double.nan, .infinity, -.infinity, .greatestFiniteMagnitude] {
+      #expect(GPUService.usage(from: ["Device Utilization %": value]) == nil)
+    }
+  }
+
+  @Test("GPU history follows device IDs and clears missing or unavailable readings")
+  @MainActor
+  func gpuSnapshotHistory() async {
+    let provider = MutableGPUProvider(devices: [
+      GPUDeviceReading(id: 10, name: "GPU A", usage: 0.25),
+      GPUDeviceReading(id: 20, name: "GPU B", usage: 0.75),
+    ])
+    let viewModel = SystemMonitorViewModel(
+      cpuProvider: PlaceholderCPUService(),
+      perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      gpuProvider: provider,
+      memoryProvider: PlaceholderMemoryService(),
+      networkProvider: PlaceholderNetworkService(),
+      diskProvider: PlaceholderDiskService(),
+      batteryProvider: PlaceholderBatteryService(),
+      historyCapacity: 2
+    )
+
+    await viewModel.refreshForMonitoring()
+    #expect(viewModel.snapshot.gpuUsage(for: 10) == 0.25)
+    #expect(viewModel.snapshot.gpuUsage(for: 20) == 0.75)
+    #expect(viewModel.snapshot.gpuUsage(for: 30) == nil)
+
+    await provider.setDevices([
+      GPUDeviceReading(id: 30, name: "New GPU", usage: 0.5),
+      GPUDeviceReading(id: 20, name: "GPU B", usage: nil),
+    ])
+    await viewModel.refreshForMonitoring()
+    #expect(viewModel.snapshot.gpuUsage(for: 10) == nil)
+    #expect(viewModel.snapshot.gpuUsage(for: 20) == nil)
+    #expect(viewModel.snapshot.gpuUsage(for: 30) == 0.5)
+    #expect(viewModel.history.first?.gpuUsage(for: 10) == 0.25)
+    #expect(viewModel.history.first?.gpuUsage(for: 30) == nil)
+
+    await provider.setDevices([])
+    await viewModel.refresh()
+    #expect(viewModel.snapshot.gpuDevices.isEmpty)
+    #expect(viewModel.history.count == 2)
+    #expect(viewModel.history.last?.gpuDevices.isEmpty == true)
+    #expect(await provider.readCount == 3)
+  }
+
+  @Test("GPU service safely supports available and unavailable driver counters")
+  func liveGPUReadings() async {
+    let readings = await GPUService().readGPUs()
+    #expect(Set(readings.map(\.id)).count == readings.count)
+    #expect(readings.map(\.id) == readings.map(\.id).sorted())
+    for reading in readings {
+      #expect(!reading.name.isEmpty)
+      if let usage = reading.usage {
+        #expect(usage.isFinite)
+        #expect((0...1).contains(usage))
+      }
+    }
+  }
+
   @Test("Battery calculation normalizes capacity and preserves power states")
   func batteryCalculation() {
     let reading = BatteryService.makeReading(
@@ -937,6 +1020,24 @@ private final class TestDateSource {
 
   func advance(by interval: TimeInterval) {
     currentDate.addTimeInterval(interval)
+  }
+}
+
+private actor MutableGPUProvider: GPUProviding {
+  private var devices: [GPUDeviceReading]
+  private(set) var readCount = 0
+
+  init(devices: [GPUDeviceReading]) {
+    self.devices = devices
+  }
+
+  func setDevices(_ devices: [GPUDeviceReading]) {
+    self.devices = devices
+  }
+
+  func readGPUs() async -> [GPUDeviceReading] {
+    readCount += 1
+    return devices
   }
 }
 

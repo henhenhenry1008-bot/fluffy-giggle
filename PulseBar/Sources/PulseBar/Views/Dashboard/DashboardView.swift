@@ -20,14 +20,21 @@ struct DashboardView: View {
     VStack(spacing: 12) {
       header
 
-      LazyVGrid(columns: columns, spacing: 10) {
-        cpuCard
-        memoryCard
-        diskCard
-        batteryCard
-      }
+      ScrollView {
+        VStack(spacing: 12) {
+          LazyVGrid(columns: columns, spacing: 10) {
+            cpuCard
+            memoryCard
+            diskCard
+            batteryCard
+          }
 
-      networkCard
+          gpuCard
+          networkCard
+        }
+      }
+      .frame(height: 520)
+
       footer
     }
     .padding(16)
@@ -100,6 +107,51 @@ struct DashboardView: View {
       .frame(height: 40)
 
       CoreUsageStrip(usages: viewModel.snapshot.cpuCoreUsages)
+    }
+  }
+
+  private var gpuCard: some View {
+    MetricCard(title: "GPU", systemImage: "display", tint: .indigo) {
+      Text("Experimental · Driver-reported")
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .help(
+          "Uses undocumented read-only driver statistics. macOS updates may make readings unavailable."
+        )
+
+      if viewModel.snapshot.gpuDevices.isEmpty {
+        Text("Unavailable")
+          .font(.body)
+          .foregroundStyle(.secondary)
+      }
+
+      ForEach(viewModel.snapshot.gpuDevices) { gpu in
+        VStack(alignment: .leading, spacing: 6) {
+          HStack {
+            Text(gpu.name)
+              .font(.caption.weight(.medium))
+              .lineLimit(1)
+              .help(gpu.name)
+
+            Spacer(minLength: 6)
+
+            Text(MetricFormatter.percentage(gpu.usage))
+              .font(.body.weight(.semibold))
+              .monospacedDigit()
+              .fixedSize()
+          }
+
+          MetricChart(
+            samples: viewModel.history,
+            primarySeries: MetricChartSeries(name: "GPU", color: .indigo) { snapshot in
+              snapshot.gpuUsage(for: gpu.id)
+            },
+            fixedYDomain: 0...1,
+            accessibilityLabel: "\(gpu.name) GPU usage history"
+          )
+          .frame(height: 40)
+        }
+      }
     }
   }
 

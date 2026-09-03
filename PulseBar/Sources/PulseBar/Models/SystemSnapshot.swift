@@ -5,6 +5,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
   let timestamp: Date
   let cpuUsage: Double?
   let cpuCoreUsages: [Double?]
+  let gpuDevices: [GPUDeviceReading]
   let memoryUsed: UInt64?
   let memoryTotal: UInt64?
   let memoryAvailable: UInt64?
@@ -37,6 +38,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     timestamp: Date,
     cpuUsage: Double?,
     cpuCoreUsages: [Double?],
+    gpuDevices: [GPUDeviceReading],
     memoryUsed: UInt64?,
     memoryTotal: UInt64?,
     memoryAvailable: UInt64?,
@@ -68,6 +70,7 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     self.timestamp = timestamp
     self.cpuUsage = cpuUsage
     self.cpuCoreUsages = cpuCoreUsages
+    self.gpuDevices = gpuDevices
     self.memoryUsed = memoryUsed
     self.memoryTotal = memoryTotal
     self.memoryAvailable = memoryAvailable
@@ -96,10 +99,15 @@ struct SystemSnapshot: Identifiable, Equatable, Sendable {
     self.batteryTimeToFullChargeMinutes = batteryTimeToFullChargeMinutes
   }
 
+  func gpuUsage(for registryID: UInt64) -> Double? {
+    gpuDevices.first { $0.id == registryID }?.usage
+  }
+
   static let empty = SystemSnapshot(
     timestamp: .now,
     cpuUsage: nil,
     cpuCoreUsages: [],
+    gpuDevices: [],
     memoryUsed: nil,
     memoryTotal: nil,
     memoryAvailable: nil,

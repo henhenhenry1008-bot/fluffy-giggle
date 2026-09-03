@@ -28,6 +28,18 @@ struct PlaceholderPerCoreCPUService: PerCoreCPUProviding {
   }
 }
 
+struct PlaceholderGPUService: GPUProviding {
+  let devices: [GPUDeviceReading]
+
+  init(devices: [GPUDeviceReading] = [GPUDeviceReading(id: 1, name: "Preview GPU", usage: 0.42)]) {
+    self.devices = devices
+  }
+
+  func readGPUs() async -> [GPUDeviceReading] {
+    devices
+  }
+}
+
 struct PlaceholderMemoryService: MemoryProviding {
   func readMemory() async -> MemoryReading? {
     let total = 18 * PlaceholderUnits.gibibyte

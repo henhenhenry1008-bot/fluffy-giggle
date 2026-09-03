@@ -12,7 +12,9 @@ The data flow is:
 Monitoring services -> SystemMonitorViewModel -> SystemSnapshot -> SwiftUI
 ```
 
-Automatic sampling keeps total CPU, per-core CPU, memory, network, and disk-throughput readings at the selected refresh interval. Disk capacity is refreshed at most every 30 seconds and battery state every 5 seconds, while a manual refresh updates every metric. Static memory configuration is cached after its first successful read, history storage remains bounded, and automatic samples publish one consolidated snapshot update to SwiftUI.
+Experimental GPU monitoring identifies devices with Metal and reads each device's undocumented IOKit `PerformanceStatistics` / `Device Utilization %` field. Each GPU gets its own usage value and history; missing or malformed values are unavailable. The backend remains read-only and sandboxed, but driver compatibility is not guaranteed across macOS updates. See `PHASE_21_GPU.md` for verified system versions, limitations, and the update recheck checklist.
+
+Automatic sampling keeps total CPU, per-core CPU, GPU, memory, network, and disk-throughput readings at the selected refresh interval. Disk capacity is refreshed at most every 30 seconds and battery state every 5 seconds, while a manual refresh updates every metric. Static memory configuration is cached after its first successful read, history storage remains bounded, and automatic samples publish one consolidated snapshot update to SwiftUI.
 
 The Phase 14 optimization notes and remaining runtime profiling work are recorded in `PERFORMANCE.md`.
 

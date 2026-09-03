@@ -19,6 +19,7 @@ final class SystemMonitorViewModel: ObservableObject {
   private var batteryCache: CachedReading<BatteryReading>?
   private let cpuProvider: any CPUProviding
   private let perCoreCPUProvider: any PerCoreCPUProviding
+  private let gpuProvider: any GPUProviding
   private let memoryProvider: any MemoryProviding
   private let networkProvider: any NetworkProviding
   private let diskProvider: any DiskProviding
@@ -30,6 +31,7 @@ final class SystemMonitorViewModel: ObservableObject {
   init(
     cpuProvider: any CPUProviding = CPUService(),
     perCoreCPUProvider: any PerCoreCPUProviding = PerCoreCPUService(),
+    gpuProvider: any GPUProviding = GPUService(),
     memoryProvider: any MemoryProviding = MemoryService(),
     networkProvider: any NetworkProviding = NetworkService(),
     diskProvider: any DiskProviding = DiskService(),
@@ -43,6 +45,7 @@ final class SystemMonitorViewModel: ObservableObject {
   ) {
     self.cpuProvider = cpuProvider
     self.perCoreCPUProvider = perCoreCPUProvider
+    self.gpuProvider = gpuProvider
     self.memoryProvider = memoryProvider
     self.networkProvider = networkProvider
     self.diskProvider = diskProvider
@@ -177,6 +180,7 @@ final class SystemMonitorViewModel: ObservableObject {
 
     async let cpuUsage = cpuProvider.readCPUUsage()
     async let cpuCoreUsages = perCoreCPUProvider.readPerCoreCPUUsage()
+    async let gpuDevices = gpuProvider.readGPUs()
     async let memory = memoryProvider.readMemory()
     async let network = networkProvider.readNetwork()
     async let diskThroughput = diskProvider.readDiskThroughput()
@@ -194,8 +198,11 @@ final class SystemMonitorViewModel: ObservableObject {
       battery = await batteryProvider.readBattery()
     }
 
-    let (latestCPUUsage, latestCoreUsages, latestMemory, latestNetwork, latestDiskThroughput) =
-      await (cpuUsage, cpuCoreUsages, memory, network, diskThroughput)
+    let (
+      latestCPUUsage, latestCoreUsages, latestGPUs, latestMemory, latestNetwork,
+      latestDiskThroughput
+    ) =
+      await (cpuUsage, cpuCoreUsages, gpuDevices, memory, network, diskThroughput)
 
     // A canceled automatic sample should not publish after monitoring stops or
     // an interval change replaces its loop.
@@ -212,6 +219,7 @@ final class SystemMonitorViewModel: ObservableObject {
       timestamp: sampleTime,
       cpuUsage: latestCPUUsage,
       cpuCoreUsages: latestCoreUsages,
+      gpuDevices: latestGPUs,
       memoryUsed: latestMemory?.usedBytes,
       memoryTotal: latestMemory?.totalBytes,
       memoryAvailable: latestMemory?.availableBytes,

@@ -1,3 +1,9 @@
+struct GPUDeviceReading: Identifiable, Equatable, Sendable {
+  let id: UInt64
+  let name: String
+  let usage: Double?
+}
+
 struct MemoryReading: Equatable, Sendable {
   let usedBytes: UInt64
   let totalBytes: UInt64
