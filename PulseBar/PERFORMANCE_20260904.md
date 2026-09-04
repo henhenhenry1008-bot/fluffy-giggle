@@ -140,10 +140,14 @@ These short observations are not a guarantee on other hardware or workloads.
 At the user's request, publish this branch's completed native history, including
 the previously local network/unit fix, compact/flexible/color UI revisions, each
 performance experiment and its explicit rollback, and this report. The remote is
-`henhenhenry1008-bot/fluffy-giggle`; upload to `codex/phase-25-website-sensors`,
-not directly to `main`.
+`henhenhenry1008-bot/fluffy-giggle`. Direct Git push could not authenticate, so the
+connected GitHub API was used to create `codex/performance-backup-20260904`, not
+change `main` or rewrite the local branch. API commits have different metadata/SHA;
+**all 10 checkpoint tree SHAs were verified identical** before publishing refs.
+See `GITHUB_CHECKPOINTS_20260904.md` for the exact local/remote commit mapping.
 
-The nine rollback tags to synchronize are:
+The nine local rollback tags remain below; GitHub uses the corresponding
+`codex/checkpoint/…` **branches**, not remote tags:
 
 - `codex/pre-compact-ui-20260904` → `c52550a`
 - `codex/compact-ui-20260904` → `0686fe8`
