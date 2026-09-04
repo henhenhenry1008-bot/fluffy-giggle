@@ -110,3 +110,78 @@ These short observations are not a guarantee on other hardware or workloads.
 - During pre-measurement warmup, CPU details and return-to-overview navigation
   were checked. Overview retains its original layout, graphs, Disk pink and green
   battery fill with gray outline; readings continue changing.
+
+## Final build and handoff checks
+
+- Final code checkpoint: `bb6676b`, tag `codex/perf-optimized-20260904`.
+- Xcode Release build succeeded with strict concurrency / Swift warnings-as-errors.
+  `lipo` verified both **arm64 and x86_64** slices; `codesign --verify --deep --strict`
+  passed. Runtime validation is on Apple Silicon only.
+- Native settings verified all four intervals; switched to 0.5 seconds, checked
+  updating data, then restored the user's **1 second** setting. Tested Light and
+  System appearance, then restored **System**. History remains **60 samples**;
+  only Memory is enabled in the menu bar, unchanged from before this task.
+- Final runnable: `运行版/PerformanceOptimized-20260904/PulseBar.app`.
+  This is a local ad-hoc signed build, not a notarized public release. Existing
+  Launch at Login Unavailable on these local builds is not addressed by this task.
+- No forced unwraps, unbounded caches, new timers/tasks, sensor-backend or network
+  accounting changes in the retained performance patch. Unrelated dirty work remains.
+- Release 1-second overview, PID 28033: **5.198%, 4.347%, 5.448%; mean 4.998%**.
+  This separate, later run is more variable than the Debug comparison. Do not
+  claim Release is faster from these data or that every interval is below 5%.
+- Release 0.5-second overview: after 35-second history warmup, two 20-second
+  trials gave **7.998%, 7.795%; mean 7.896%**. This high-refresh case still needs
+  further optimization; it is not reported as fixed. Restored **1 second / System**
+  after testing and left the final Release overview running. A separate short
+  stack sample confirmed native **ARM64**, not Rosetta translation.
+
+## GitHub upload scope
+
+At the user's request, publish this branch's completed native history, including
+the previously local network/unit fix, compact/flexible/color UI revisions, each
+performance experiment and its explicit rollback, and this report. The remote is
+`henhenhenry1008-bot/fluffy-giggle`; upload to `codex/phase-25-website-sensors`,
+not directly to `main`.
+
+The nine rollback tags to synchronize are:
+
+- `codex/pre-compact-ui-20260904` → `c52550a`
+- `codex/compact-ui-20260904` → `0686fe8`
+- `codex/flexible-ui-20260904` → `61a468c`
+- `codex/color-ui-20260904` → `41d52ac`
+- `codex/perf-round-1-before-20260904` → `41d52ac`
+- `codex/perf-round-2-before-20260904` → `6b4eb16`
+- `codex/perf-round-2-experiment-20260904` → `fafa48f`
+- `codex/perf-round-3-before-20260904` → `3f572ad`
+- `codex/perf-optimized-20260904` → `bb6676b`
+
+Phase 1–24 branches were found on the remote at the existing local checkpoint
+commits. Existing uncommitted sensor/website work and local app/build/backups are
+not included in this source upload. This does not create a GitHub binary release,
+publish an installer, or merge to main.
+
+## Safe rollback
+
+Quit the currently running PulseBar using its Quit button before starting another
+saved App, so two copies do not distort readings:
+
+- Original approved UI: `运行版/ColorOverview-20260904/PulseBar.app` (`41d52ac`).
+- First effective optimization: `运行版/PerfRound1-20260904/PulseBar.app` (`6b4eb16`).
+- Final Debug checkpoint: `运行版/PerfRound3-20260904/PulseBar.app` (`bb6676b`).
+
+For source rollback, inspect the tags listed above and create a separate worktree
+at the desired tag. Do **not** hard-reset the current checkout: it contains the
+user's preexisting uncommitted sensor/website work. Full working-source backups
+also preserve that experimental state; Git checkpoints deliberately exclude it.
+
+## Remaining measurement limitations
+
+- Short CPU averages on this Mac, not an always-below-5% promise. Startup, opening
+  panels, faster refresh, system load, GPU activity and power changes can cause spikes.
+- Formal comparisons cover the open overview at 1 second / 60 samples. A reliably
+  verified closed-window/menu-popover-only baseline was not obtained; no claimed
+  background reduction is based on the uncertain closing-window attempts.
+- No multi-hour leak/energy/thermal run, Intel hardware runtime, or macOS 14 runtime
+  validation. macOS 14 retains the original per-mark rendering fallback.
+- Raw interval CPU measurement uses cumulative CPU time (centisecond granularity),
+  so it should not be expected to match an Activity Monitor instantaneous sample.
