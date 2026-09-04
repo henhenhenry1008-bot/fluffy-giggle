@@ -4,6 +4,9 @@ import SwiftUI
 struct DashboardView: View {
   @ObservedObject var viewModel: SystemMonitorViewModel
   var showsOpenWindowButton = true
+  var compact = false
+  @State private var selectedMetric: CompactMetric?
+  @State private var showsAllMetrics = false
   @Environment(\.openWindow) private var openWindow
   @AppStorage(AppPreferenceKey.networkDisplayUnit) private var networkDisplayUnitValue =
     NetworkDisplayUnit.automatic.rawValue
@@ -22,27 +25,204 @@ struct DashboardView: View {
     VStack(spacing: 12) {
       header
 
-      ScrollView {
-        VStack(spacing: 12) {
-          LazyVGrid(columns: columns, spacing: 10) {
-            cpuCard
-            memoryCard
-            diskCard
-            batteryCard
-          }
-
-          gpuCard
-          networkCard
-          appProcessCard
-        }
+      if compact && !showsAllMetrics {
+        compactContent
+      } else {
+        detailedContent
       }
-      .frame(height: 520)
 
       footer
     }
     .padding(16)
     .frame(width: 390)
     .background(.ultraThinMaterial)
+  }
+
+  private var detailedContent: some View {
+    ScrollView {
+      VStack(spacing: 12) {
+        LazyVGrid(columns: columns, spacing: 10) {
+          cpuCard
+          memoryCard
+          diskCard
+          batteryCard
+        }
+
+        gpuCard
+        networkCard
+        appProcessCard
+      }
+    }
+    .frame(height: 520)
+  }
+
+  private enum CompactMetric: String {
+    case cpu = "CPU"
+    case memory = "Memory"
+    case disk = "Disk"
+    case network = "Network"
+    case gpu = "GPU"
+    case battery = "Battery"
+  }
+
+  @ViewBuilder
+  private var compactContent: some View {
+    if let selectedMetric {
+      HStack {
+        Button {
+          self.selectedMetric = nil
+        } label: {
+          Label("Overview", systemImage: "chevron.left")
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut(.escape, modifiers: [])
+        Spacer()
+        Text("\(selectedMetric.rawValue) details")
+          .font(.subheadline.weight(.medium))
+          .foregroundStyle(.secondary)
+      }
+      ScrollView {
+        selectedDetail(selectedMetric)
+      }
+      .frame(height: 326)
+    } else {
+      LazyVGrid(columns: columns, spacing: 10) {
+        summaryButton(.cpu) {
+          SummaryMetricCard(
+            title: "CPU", systemImage: "cpu", tint: .blue,
+            value: MetricFormatter.percentage(viewModel.snapshot.cpuUsage),
+            detail: "Processor usage"
+          ) {
+            MetricChart(
+              samples: viewModel.history,
+              primarySeries: MetricChartSeries(name: "CPU", color: .blue) { $0.cpuUsage },
+              fixedYDomain: 0...1, accessibilityLabel: "CPU usage history"
+            )
+          }
+        }
+        summaryButton(.memory) {
+          SummaryMetricCard(
+            title: "Memory", systemImage: "memorychip", tint: .green,
+            value: MetricFormatter.percentage(memoryUsage),
+            detail: memoryCapacitySummary
+          ) {
+            MetricChart(
+              samples: viewModel.history,
+              primarySeries: MetricChartSeries(name: "Memory", color: .green) {
+                Self.memoryUsage(for: $0)
+              },
+              fixedYDomain: 0...1, accessibilityLabel: "Memory usage history"
+            )
+          }
+        }
+        summaryButton(.disk) {
+          SummaryMetricCard(
+            title: "Disk", systemImage: "internaldrive", tint: .orange,
+            value: MetricFormatter.percentage(diskUsage),
+            detail: diskAvailabilitySummary
+          ) {
+            VStack(alignment: .leading, spacing: 5) {
+              ProgressView(value: diskUsage ?? 0, total: 1)
+                .tint(.orange)
+                .accessibilityHidden(true)
+              Text("Storage used")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+          }
+        }
+        summaryButton(.network) {
+          SummaryMetricCard(
+            title: "Network", systemImage: "network", tint: .cyan,
+            value:
+              "↓ \(MetricFormatter.rate(viewModel.snapshot.networkDownloadBytesPerSecond, unit: networkDisplayUnit))",
+            detail:
+              "↑ \(MetricFormatter.rate(viewModel.snapshot.networkUploadBytesPerSecond, unit: networkDisplayUnit))"
+          ) {
+            MetricChart(
+              samples: viewModel.history,
+              primarySeries: MetricChartSeries(name: "Download", color: .cyan) {
+                $0.networkDownloadBytesPerSecond
+              },
+              secondarySeries: MetricChartSeries(name: "Upload", color: .orange) {
+                $0.networkUploadBytesPerSecond
+              },
+              accessibilityLabel: "Download (cyan) and upload (orange) history"
+            )
+          }
+          .help(
+            "↓ Download · ↑ Upload. Physical interfaces only; includes local-network traffic. Click for details."
+          )
+        }
+      }
+
+      HStack(spacing: 12) {
+        Button {
+          selectedMetric = .gpu
+        } label: {
+          Label("GPU details", systemImage: "display")
+        }
+        .help("Experimental, driver-reported GPU measurements")
+
+        Spacer(minLength: 0)
+
+        if viewModel.snapshot.batteryPercentage != nil {
+          Button {
+            selectedMetric = .battery
+          } label: {
+            Label(
+              MetricFormatter.percentage(viewModel.snapshot.batteryPercentage),
+              systemImage: batterySystemImage
+            )
+          }
+          .help("Battery · \(batteryState)")
+          .accessibilityLabel(
+            "Battery \(MetricFormatter.percentage(viewModel.snapshot.batteryPercentage)), \(batteryState). Show details"
+          )
+        }
+      }
+      .font(.subheadline)
+      .buttonStyle(.plain)
+      .foregroundStyle(.secondary)
+      .padding(.horizontal, 4)
+      .padding(.vertical, 6)
+    }
+  }
+
+  private var diskAvailabilitySummary: String {
+    guard let available = viewModel.snapshot.diskAvailable else { return "Space unavailable" }
+    return "\(MetricFormatter.bytes(available)) available"
+  }
+
+  private var memoryCapacitySummary: String {
+    guard let used = viewModel.snapshot.memoryUsed,
+      let total = viewModel.snapshot.memoryTotal, total > 0
+    else { return "Usage unavailable" }
+    return "\(MetricFormatter.bytes(used)) / \(MetricFormatter.bytes(total))"
+  }
+
+  private func summaryButton<Content: View>(
+    _ metric: CompactMetric, @ViewBuilder content: () -> Content
+  ) -> some View {
+    Button {
+      selectedMetric = metric
+    } label: {
+      content()
+    }
+    .buttonStyle(.plain)
+    .accessibilityHint("Show \(metric.rawValue) details")
+  }
+
+  @ViewBuilder
+  private func selectedDetail(_ metric: CompactMetric) -> some View {
+    switch metric {
+    case .cpu: cpuCard
+    case .memory: memoryCard
+    case .disk: diskCard
+    case .network: networkCard
+    case .gpu: gpuCard
+    case .battery: batteryCard
+    }
   }
 
   private var header: some View {
@@ -165,7 +345,7 @@ struct DashboardView: View {
   }
 
   private var gpuCard: some View {
-    MetricCard(title: "GPU", systemImage: "display", tint: .indigo) {
+    MetricCard(title: "GPU", systemImage: "display", tint: .purple) {
       Text("Experimental · Driver-reported")
         .font(.caption2)
         .foregroundStyle(.secondary)
@@ -197,7 +377,7 @@ struct DashboardView: View {
 
           MetricChart(
             samples: viewModel.history,
-            primarySeries: MetricChartSeries(name: "GPU", color: .indigo) { snapshot in
+            primarySeries: MetricChartSeries(name: "GPU", color: .purple) { snapshot in
               snapshot.gpuUsage(for: gpu.id)
             },
             fixedYDomain: 0...1,
@@ -210,7 +390,7 @@ struct DashboardView: View {
   }
 
   private var memoryCard: some View {
-    MetricCard(title: "Memory", systemImage: "memorychip", tint: .purple) {
+    MetricCard(title: "Memory", systemImage: "memorychip", tint: .green) {
       Text(MetricFormatter.percentage(memoryUsage))
         .font(.title2.weight(.semibold))
         .monospacedDigit()
@@ -223,11 +403,11 @@ struct DashboardView: View {
       .lineLimit(1)
 
       ProgressView(value: memoryUsage ?? 0, total: 1)
-        .tint(.purple)
+        .tint(.green)
 
       MetricChart(
         samples: viewModel.history,
-        primarySeries: MetricChartSeries(name: "Memory", color: .purple) { snapshot in
+        primarySeries: MetricChartSeries(name: "Memory", color: .green) { snapshot in
           Self.memoryUsage(for: snapshot)
         },
         fixedYDomain: 0...1,
@@ -252,7 +432,7 @@ struct DashboardView: View {
   }
 
   private var diskCard: some View {
-    MetricCard(title: "Disk", systemImage: "internaldrive", tint: .green) {
+    MetricCard(title: "Disk", systemImage: "internaldrive", tint: .orange) {
       Text(MetricFormatter.percentage(diskUsage))
         .font(.title2.weight(.semibold))
         .monospacedDigit()
@@ -265,7 +445,7 @@ struct DashboardView: View {
       .lineLimit(1)
 
       ProgressView(value: diskUsage ?? 0, total: 1)
-        .tint(.green)
+        .tint(.orange)
 
       Text("Available \(MetricFormatter.bytes(viewModel.snapshot.diskAvailable))")
         .font(.caption2)
@@ -276,14 +456,14 @@ struct DashboardView: View {
         symbol: "arrow.down",
         title: "Read",
         value: viewModel.snapshot.diskReadBytesPerSecond,
-        tint: .green
+        tint: .orange
       )
 
       diskRate(
         symbol: "arrow.up",
         title: "Write",
         value: viewModel.snapshot.diskWriteBytesPerSecond,
-        tint: .orange
+        tint: .blue
       )
     }
   }
@@ -418,10 +598,22 @@ struct DashboardView: View {
         Label("Settings", systemImage: "gearshape")
       }
 
-      Button {
-        showAboutPanel()
-      } label: {
-        Label("About", systemImage: "info.circle")
+      if compact && !showsOpenWindowButton {
+        Button {
+          selectedMetric = nil
+          showsAllMetrics.toggle()
+        } label: {
+          Label(
+            showsAllMetrics ? "Overview" : "All metrics",
+            systemImage: showsAllMetrics ? "square.grid.2x2" : "list.bullet"
+          )
+        }
+      } else {
+        Button {
+          showAboutPanel()
+        } label: {
+          Label("About", systemImage: "info.circle")
+        }
       }
 
       Spacer()

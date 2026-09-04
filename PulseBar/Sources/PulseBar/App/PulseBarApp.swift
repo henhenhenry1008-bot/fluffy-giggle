@@ -13,7 +13,7 @@ struct PulseBarApp: App {
 
   var body: some Scene {
     Window("PulseBar", id: "dashboard") {
-      DashboardView(viewModel: monitor, showsOpenWindowButton: false)
+      DashboardView(viewModel: monitor, showsOpenWindowButton: false, compact: true)
         .preferredColorScheme(appearancePreference.colorScheme)
         .onAppear {
           applyStoredMonitoringPreferences()
@@ -24,7 +24,7 @@ struct PulseBarApp: App {
     .windowResizability(.contentSize)
 
     MenuBarExtra {
-      DashboardView(viewModel: monitor)
+      DashboardView(viewModel: monitor, compact: true)
         .preferredColorScheme(appearancePreference.colorScheme)
     } label: {
       MenuBarLabelView(snapshot: monitor.snapshot)
