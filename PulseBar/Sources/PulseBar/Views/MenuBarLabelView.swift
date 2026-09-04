@@ -1,5 +1,13 @@
 import SwiftUI
 
+struct MonitoredMenuBarLabel: View {
+  @ObservedObject var monitor: SystemMonitorViewModel
+
+  var body: some View {
+    MenuBarLabelView(snapshot: monitor.snapshot)
+  }
+}
+
 struct MenuBarLabelView: View {
   @AppStorage(AppPreferenceKey.showsCPU) private var showsCPU = true
   @AppStorage(AppPreferenceKey.showsMemory) private var showsMemory = true
@@ -18,18 +26,8 @@ struct MenuBarLabelView: View {
       networkUnit: networkDisplayUnit
     )
 
-    HStack(spacing: 8) {
-      if presentation.metrics.isEmpty {
-        Text("PulseBar")
-      } else {
-        ForEach(presentation.metrics) { metric in
-          MenuBarMetricView(presentation: metric)
-        }
-      }
-    }
-    .fixedSize()
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel(presentation.accessibilityLabel)
+    MenuBarPresentationView(presentation: presentation)
+      .equatable()
   }
 
   private var visibility: MenuBarMetricVisibility {
@@ -44,6 +42,31 @@ struct MenuBarLabelView: View {
 
   private var networkDisplayUnit: NetworkDisplayUnit {
     NetworkDisplayUnit(rawValue: networkDisplayUnitValue) ?? .automatic
+  }
+}
+
+// Compare only the rendered text and accessibility values, not the full
+// snapshot's changing UUID, timestamps or metrics that the user has hidden.
+struct MenuBarPresentationView: View, Equatable {
+  let presentation: MenuBarPresentation
+
+  var body: some View {
+    HStack(spacing: 8) {
+      if presentation.metrics.isEmpty {
+        Text("PulseBar")
+      } else {
+        ForEach(presentation.metrics) { metric in
+          MenuBarMetricView(presentation: metric)
+        }
+      }
+    }
+    .fixedSize()
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(presentation.accessibilityLabel)
+  }
+
+  nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+    lhs.presentation == rhs.presentation
   }
 }
 

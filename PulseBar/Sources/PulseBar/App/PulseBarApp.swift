@@ -3,7 +3,9 @@ import SwiftUI
 
 @main
 struct PulseBarApp: App {
-  @StateObject private var monitor = SystemMonitorViewModel()
+  // Own the reference here; only the individual metric views observe its
+  // publications. App-level observation invalidates every scene each sample.
+  @State private var monitor = SystemMonitorViewModel()
   @AppStorage(AppPreferenceKey.refreshInterval) private var refreshIntervalValue =
     MonitoringRefreshInterval.standard.rawValue
   @AppStorage(AppPreferenceKey.historyLength) private var historyLengthValue =
@@ -27,7 +29,7 @@ struct PulseBarApp: App {
       DashboardView(viewModel: monitor, compact: true)
         .preferredColorScheme(appearancePreference.colorScheme)
     } label: {
-      MenuBarLabelView(snapshot: monitor.snapshot)
+      MonitoredMenuBarLabel(monitor: monitor)
         .onAppear {
           applyStoredMonitoringPreferences()
           monitor.startMonitoring()

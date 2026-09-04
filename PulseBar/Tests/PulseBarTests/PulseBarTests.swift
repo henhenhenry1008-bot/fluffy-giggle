@@ -139,6 +139,35 @@ struct PulseBarTests {
     #expect(chart.secondaryPoints.allSatisfy { $0.seriesName == "Upload" })
   }
 
+  @Test("Menu bar redraw equality ignores hidden readings but respects visible values and units")
+  @MainActor
+  func menuBarRedrawEquality() {
+    let memoryOnly = MenuBarMetricVisibility(
+      showsCPU: false, showsMemory: true, showsNetworkDownload: false,
+      showsNetworkUpload: false, showsBattery: false)
+    func view(
+      cpu: Double, memory: Double, download: Double,
+      visibility: MenuBarMetricVisibility, unit: NetworkDisplayUnit = .automatic
+    )
+      -> MenuBarPresentationView
+    {
+      MenuBarPresentationView(
+        presentation: MenuBarPresentation(
+          cpuUsage: cpu, memoryUsage: memory, downloadBytesPerSecond: download,
+          visibility: visibility, networkUnit: unit))
+    }
+    let original = view(cpu: 0.1, memory: 0.511, download: 1_000_000, visibility: memoryOnly)
+    #expect(original == view(cpu: 0.9, memory: 0.514, download: 9_000_000, visibility: memoryOnly))
+    #expect(original != view(cpu: 0.1, memory: 0.53, download: 1_000_000, visibility: memoryOnly))
+    let visibleNetwork = view(cpu: 0.1, memory: 0.511, download: 1_000_000, visibility: .standard)
+    #expect(original != visibleNetwork)
+    #expect(
+      visibleNetwork
+        != view(
+          cpu: 0.1, memory: 0.511, download: 1_000_000,
+          visibility: .standard, unit: .bitsPerSecond))
+  }
+
   @Test("Menu bar presentation is compact and includes download throughput")
   func menuBarPresentation() {
     let presentation = MenuBarPresentation(
