@@ -18,7 +18,8 @@ struct MetricChartSeries {
 }
 
 struct MetricChart: View {
-  let samples: RingBuffer<SystemSnapshot>
+  let primaryPoints: [MetricChartPoint]
+  let secondaryPoints: [MetricChartPoint]
   let primarySeries: MetricChartSeries
   let secondarySeries: MetricChartSeries?
   let fixedYDomain: ClosedRange<Double>?
@@ -31,7 +32,8 @@ struct MetricChart: View {
     fixedYDomain: ClosedRange<Double>? = nil,
     accessibilityLabel: String
   ) {
-    self.samples = samples
+    primaryPoints = Self.points(samples: samples, series: primarySeries)
+    secondaryPoints = secondarySeries.map { Self.points(samples: samples, series: $0) } ?? []
     self.primarySeries = primarySeries
     self.secondarySeries = secondarySeries
     self.fixedYDomain = fixedYDomain
@@ -39,16 +41,20 @@ struct MetricChart: View {
   }
 
   var body: some View {
-    Chart {
-      ForEach(samples) { sample in
-        if let value = sanitized(primarySeries.value(sample)) {
-          lineMark(sample: sample, value: value, series: primarySeries)
-        }
-
-        if let secondarySeries,
-          let value = sanitized(secondarySeries.value(sample))
-        {
-          lineMark(sample: sample, value: value, series: secondarySeries)
+    Group {
+      if #available(macOS 15, *) {
+        vectorizedChart
+      } else {
+        // Keep the existing renderer on macOS 14, where LinePlot is unavailable.
+        Chart {
+          ForEach(primaryPoints) { point in
+            lineMark(point: point, series: primarySeries)
+          }
+          if let secondarySeries {
+            ForEach(secondaryPoints) { point in
+              lineMark(point: point, series: secondarySeries)
+            }
+          }
         }
       }
     }
@@ -64,14 +70,37 @@ struct MetricChart: View {
     .accessibilityLabel(accessibilityLabel)
   }
 
-  private func lineMark(
-    sample: SystemSnapshot,
-    value: Double,
-    series: MetricChartSeries
-  ) -> some ChartContent {
+  @available(macOS 15, *)
+  private var vectorizedChart: some View {
+    Chart {
+      vectorizedLine(primaryPoints, series: primarySeries)
+      if let secondarySeries {
+        vectorizedLine(secondaryPoints, series: secondarySeries)
+      }
+    }
+  }
+
+  @available(macOS 15, *)
+  private func vectorizedLine(_ points: [MetricChartPoint], series: MetricChartSeries)
+    -> some ChartContent
+  {
+    // Stored-property projections let Charts draw one batch per series instead
+    // of maintaining hundreds of independent SwiftUI mark nodes each tick.
+    LinePlot(
+      points,
+      x: .value("Time", \.timestamp),
+      y: .value(series.name, \.value),
+      series: .value("Metric", \.seriesName)
+    )
+    .foregroundStyle(series.color)
+    .lineStyle(StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+    .interpolationMethod(.monotone)
+  }
+
+  private func lineMark(point: MetricChartPoint, series: MetricChartSeries) -> some ChartContent {
     LineMark(
-      x: .value("Time", sample.timestamp),
-      y: .value(series.name, value),
+      x: .value("Time", point.timestamp),
+      y: .value(series.name, point.value),
       series: .value("Metric", series.name)
     )
     .foregroundStyle(series.color)
@@ -85,11 +114,11 @@ struct MetricChart: View {
     }
 
     var maximum = 0.0
-    for sample in samples {
-      maximum = max(maximum, sanitized(primarySeries.value(sample)) ?? 0)
-      if let secondarySeries {
-        maximum = max(maximum, sanitized(secondarySeries.value(sample)) ?? 0)
-      }
+    for point in primaryPoints {
+      maximum = max(maximum, point.value)
+    }
+    for point in secondaryPoints {
+      maximum = max(maximum, point.value)
     }
     return 0...Self.upperBound(for: maximum)
   }
@@ -102,8 +131,20 @@ struct MetricChart: View {
     return max(paddedMaximum.isFinite ? paddedMaximum : maximum, 1)
   }
 
-  private func sanitized(_ value: Double?) -> Double? {
-    guard let value, value.isFinite, value >= 0 else { return nil }
-    return value
+  static func points(samples: RingBuffer<SystemSnapshot>, series: MetricChartSeries)
+    -> [MetricChartPoint]
+  {
+    samples.compactMap { sample in
+      guard let value = series.value(sample), value.isFinite, value >= 0 else { return nil }
+      return MetricChartPoint(
+        id: sample.id, timestamp: sample.timestamp, value: value, seriesName: series.name)
+    }
   }
+}
+
+struct MetricChartPoint: Identifiable, Equatable, Sendable {
+  let id: UUID
+  let timestamp: Date
+  let value: Double
+  let seriesName: String
 }

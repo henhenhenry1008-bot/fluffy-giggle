@@ -79,6 +79,66 @@ struct PulseBarTests {
         == Double.greatestFiniteMagnitude)
   }
 
+  @Test("Chart point preparation preserves valid readings and rejects invalid values")
+  @MainActor
+  func chartPointFiltering() {
+    var samples = RingBuffer<SystemSnapshot>(capacity: 1)
+    samples.append(.empty)
+    let invalidValues: [Double?] = [nil, -1, .nan, .infinity]
+    for value in invalidValues {
+      let series = MetricChartSeries(name: "Download", color: .cyan) { _ in value }
+      #expect(MetricChart.points(samples: samples, series: series).isEmpty)
+    }
+    for value in [0.0, 0.25, Double.greatestFiniteMagnitude] {
+      let series = MetricChartSeries(name: "Download", color: .cyan) { _ in value }
+      let points = MetricChart.points(samples: samples, series: series)
+      #expect(points.count == 1)
+      #expect(points.first?.value == value)
+      #expect(points.first?.id == SystemSnapshot.empty.id)
+      #expect(points.first?.timestamp == SystemSnapshot.empty.timestamp)
+      #expect(points.first?.seriesName == "Download")
+    }
+  }
+
+  @Test("Batched chart points preserve ring-buffer order and independent series")
+  @MainActor
+  func chartPointOrdering() async {
+    let viewModel = SystemMonitorViewModel(
+      cpuProvider: PlaceholderCPUService(),
+      perCoreCPUProvider: PlaceholderPerCoreCPUService(),
+      cpuTopologyProvider: PlaceholderCPUTopologyService(),
+      gpuProvider: PlaceholderGPUService(),
+      appProcessProvider: PlaceholderAppProcessService(),
+      memoryProvider: PlaceholderMemoryService(),
+      networkProvider: PlaceholderNetworkService(),
+      diskProvider: PlaceholderDiskService(),
+      batteryProvider: PlaceholderBatteryService(),
+      historyCapacity: 2
+    )
+    for _ in 0..<3 { await viewModel.refreshForMonitoring() }
+    let chart = MetricChart(
+      samples: viewModel.history,
+      primarySeries: MetricChartSeries(name: "Download", color: .cyan) {
+        $0.networkDownloadBytesPerSecond
+      },
+      secondarySeries: MetricChartSeries(name: "Upload", color: .orange) {
+        $0.networkUploadBytesPerSecond
+      },
+      accessibilityLabel: "Network"
+    )
+    #expect(chart.primaryPoints.count == 2)
+    #expect(chart.primaryPoints.map(\.id) == viewModel.history.map(\.id))
+    #expect(chart.secondaryPoints.map(\.timestamp) == viewModel.history.map(\.timestamp))
+    #expect(
+      chart.primaryPoints.map(\.value)
+        == viewModel.history.compactMap(\.networkDownloadBytesPerSecond))
+    #expect(
+      chart.secondaryPoints.map(\.value)
+        == viewModel.history.compactMap(\.networkUploadBytesPerSecond))
+    #expect(chart.primaryPoints.allSatisfy { $0.seriesName == "Download" })
+    #expect(chart.secondaryPoints.allSatisfy { $0.seriesName == "Upload" })
+  }
+
   @Test("Menu bar presentation is compact and includes download throughput")
   func menuBarPresentation() {
     let presentation = MenuBarPresentation(
