@@ -55,6 +55,15 @@ struct PulseBarTests {
     #expect(MetricFormatter.bytes(nil) == "Unavailable")
   }
 
+  @Test("Unit notice memory example matches the unchanged decimal formatter")
+  func decimalUnitNoticeExample() {
+    let installedMemoryBytes: UInt64 = 48 * 1_024 * 1_024 * 1_024
+    #expect(installedMemoryBytes == 51_539_607_552)
+    #expect(MetricFormatter.bytes(installedMemoryBytes) == "52 GB")
+    #expect(MetricFormatter.bytes(installedMemoryBytes / 2) == "26 GB")
+    #expect(MetricFormatter.percentage(Double(installedMemoryBytes / 2) / Double(installedMemoryBytes)) == "50%")
+  }
+
   @Test("Invalid throughput remains unavailable after decimal conversion")
   func invalidByteRates() {
     let values: [Double?] = [nil, -1, .nan, .infinity]

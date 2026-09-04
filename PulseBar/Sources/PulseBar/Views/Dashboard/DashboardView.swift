@@ -130,6 +130,8 @@ struct DashboardView: View {
           .font(.caption)
         Spacer(minLength: 0)
 
+        DecimalUnitNotice()
+
         if viewModel.snapshot.batteryPercentage != nil {
           Button {
             selectedMetric = .battery
@@ -924,5 +926,38 @@ struct DashboardView: View {
   private func showAboutPanel() {
     NSApplication.shared.activate(ignoringOtherApps: true)
     NSApplication.shared.orderFrontStandardAboutPanel(nil)
+  }
+}
+
+private struct DecimalUnitNotice: View {
+  @State private var showsExplanation = false
+
+  var body: some View {
+    Button {
+      showsExplanation.toggle()
+    } label: {
+      Label("Units: 1000", systemImage: "info.circle")
+        .font(.caption)
+        .fixedSize()
+    }
+    .buttonStyle(.plain)
+    .help("Memory, storage and byte rates use 1000-based units. Click for details.")
+    .accessibilityLabel("About 1000-based units")
+    .popover(isPresented: $showsExplanation, arrowEdge: .bottom) {
+      VStack(alignment: .leading, spacing: 12) {
+        Text("About units")
+          .font(.headline)
+        Text("Memory, storage and byte rates use decimal (1000-based) units in PulseBar.")
+        Text("1 KB = 1000 B\n1 MB = 1000 KB\n1 GB = 1000 MB\n1 TB = 1000 GB")
+          .monospacedDigit()
+        Text("For example, 48 GB of installed RAM (48 × 1024³ bytes) equals 51.54 decimal GB, shown here as 52 GB after rounding. The physical memory has not changed.")
+        Text("Usage percentages are unaffected. Network bit rates use b/s; byte rates use B/s (1 byte = 8 bits).")
+      }
+      .font(.callout)
+      .foregroundStyle(.primary)
+      .frame(width: 290, alignment: .leading)
+      .fixedSize(horizontal: false, vertical: true)
+      .padding(16)
+    }
   }
 }
