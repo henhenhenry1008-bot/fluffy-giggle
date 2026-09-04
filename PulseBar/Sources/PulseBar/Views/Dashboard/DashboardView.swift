@@ -354,6 +354,9 @@ struct DashboardView: View {
       )
       .frame(height: 48)
     }
+    .help(
+      "Physical network interfaces only. VPN and Apple peer-to-peer interfaces are excluded. Includes local-network traffic and protocol overhead."
+    )
   }
 
   private var appProcessCard: some View {

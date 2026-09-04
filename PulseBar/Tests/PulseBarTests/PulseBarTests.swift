@@ -1,4 +1,5 @@
 import Combine
+import Darwin
 import Foundation
 import IOKit.ps
 import Testing
@@ -10,14 +11,14 @@ struct PulseBarTests {
   @Test("Metric formatter presents percentages and byte rates")
   func metricFormatting() {
     #expect(MetricFormatter.percentage(0.32) == "32%")
-    #expect(MetricFormatter.bytes(18 * 1_024 * 1_024 * 1_024) == "18 GiB")
-    #expect(MetricFormatter.rate(2.4 * 1_024 * 1_024) == "2.4 MiB/s")
+    #expect(MetricFormatter.bytes(18 * 1_000 * 1_000 * 1_000) == "18 GB")
+    #expect(MetricFormatter.rate(2.4 * 1_024 * 1_024) == "2.5 MB/s")
     #expect(
       MetricFormatter.rate(2.4 * 1_024 * 1_024, unit: .bytesPerSecond) == "2.5 MB/s")
     #expect(MetricFormatter.rate(2.4 * 1_024 * 1_024, unit: .bitsPerSecond) == "20 Mb/s")
     #expect(MetricFormatter.percentage(nil) == "Unavailable")
     #expect(MetricFormatter.compactPercentage(nil) == "—")
-    #expect(MetricFormatter.compactRate(2.4 * 1_024 * 1_024) == "2.4M")
+    #expect(MetricFormatter.compactRate(2.4 * 1_024 * 1_024) == "2.5MB")
     #expect(
       MetricFormatter.rate(Double.greatestFiniteMagnitude, unit: .bitsPerSecond)
         == "Unavailable")
@@ -30,6 +31,40 @@ struct PulseBarTests {
     #expect(MetricFormatter.duration(minutes: 0) == "<1m")
     #expect(MetricFormatter.duration(minutes: -1) == "Unavailable")
     #expect(MetricFormatter.duration(minutes: nil) == "Unavailable")
+  }
+
+  @Test("Decimal byte units use the same thresholds in cards and menu bar")
+  func decimalByteUnits() {
+    let cases: [(UInt64, String, String)] = [
+      (0, "0 B", "0B"),
+      (999, "999 B", "999B"),
+      (1_000, "1.0 KB", "1.0KB"),
+      (1_000_000, "1.0 MB", "1.0MB"),
+      (1_000_000_000, "1.0 GB", "1.0GB"),
+      (1_000_000_000_000, "1.0 TB", "1.0TB"),
+    ]
+
+    for (bytes, expanded, compact) in cases {
+      #expect(MetricFormatter.bytes(bytes) == expanded)
+      for unit in [NetworkDisplayUnit.automatic, .bytesPerSecond] {
+        #expect(MetricFormatter.rate(Double(bytes), unit: unit) == "\(expanded)/s")
+        #expect(MetricFormatter.compactRate(Double(bytes), unit: unit) == compact)
+      }
+    }
+    #expect(MetricFormatter.bytes(UInt64.max).hasSuffix(" TB"))
+    #expect(MetricFormatter.bytes(nil) == "Unavailable")
+  }
+
+  @Test("Invalid throughput remains unavailable after decimal conversion")
+  func invalidByteRates() {
+    let values: [Double?] = [nil, -1, .nan, .infinity]
+    for value in values {
+      for unit in NetworkDisplayUnit.allCases {
+        #expect(MetricFormatter.rate(value, unit: unit) == "Unavailable")
+        #expect(MetricFormatter.compactRate(value, unit: unit) == "—")
+      }
+    }
+    #expect(MetricFormatter.rate(1_000_000, unit: .bitsPerSecond) == "8.0 Mb/s")
   }
 
   @Test("Chart bounds remain finite when padding extreme samples")
@@ -52,11 +87,11 @@ struct PulseBarTests {
       downloadBytesPerSecond: 2.4 * 1_024 * 1_024
     )
 
-    #expect(presentation.title == "CPU 23%  MEM 51%  ↓ 2.4M")
+    #expect(presentation.title == "CPU 23%  MEM 51%  ↓ 2.5MB")
     #expect(presentation.metrics.map(\.metric) == [.cpu, .memory, .networkDownload])
     #expect(
       presentation.accessibilityLabel
-        == "CPU 23%, memory 51%, download 2.4 MiB/s")
+        == "CPU 23%, memory 51%, download 2.5 MB/s")
 
     let unavailablePresentation = MenuBarPresentation(
       cpuUsage: nil,
@@ -621,6 +656,93 @@ struct PulseBarTests {
         #expect(swapUsedBytes <= swapTotalBytes)
       }
     }
+  }
+
+  @Test("Physical network selection uses hardware types without assuming en0")
+  func physicalNetworkSelection() {
+    for (name, type) in [
+      ("en7", "IEEE80211"), ("en0", "Ethernet"), ("en99", "Ethernet"),
+      ("wwan0", "WWAN"), ("fw0", "FireWire"), ("bt0", "Bluetooth"),
+    ] {
+      #expect(NetworkService.isPhysicalInterface(name: name, type: type, isLayered: false))
+    }
+    for (name, type) in [
+      ("utun10", "IPSec"), ("ppp0", "PPP"), ("bridge0", "Bridge"),
+      ("bond0", "Bond"), ("vlan0", "VLAN"), ("lo0", "Loopback"),
+      ("awdl0", "IEEE80211"), ("llw0", "Ethernet"), ("ap1", "IEEE80211"),
+      ("en8", "Unknown"),
+    ] {
+      #expect(!NetworkService.isPhysicalInterface(name: name, type: type, isLayered: false))
+    }
+    #expect(!NetworkService.isPhysicalInterface(name: nil, type: "Ethernet", isLayered: false))
+    #expect(!NetworkService.isPhysicalInterface(name: "", type: "Ethernet", isLayered: false))
+    #expect(!NetworkService.isPhysicalInterface(name: "en0", type: nil, isLayered: false))
+    #expect(!NetworkService.isPhysicalInterface(name: "en0", type: "Ethernet", isLayered: true))
+  }
+
+  @Test("Routing counter parsing excludes VPN, peer-to-peer, and layered duplicate traffic")
+  func physicalNetworkCounters() throws {
+    func message(index: UInt16, received: UInt64, sent: UInt64, flags: Int32 = IFF_UP) -> [UInt8] {
+      var header = if_msghdr2()
+      header.ifm_msglen = UInt16(MemoryLayout<if_msghdr2>.size)
+      header.ifm_version = UInt8(RTM_VERSION)
+      header.ifm_type = UInt8(RTM_IFINFO2)
+      header.ifm_flags = flags
+      header.ifm_index = index
+      header.ifm_data.ifi_ibytes = received
+      header.ifm_data.ifi_obytes = sent
+      return withUnsafeBytes(of: header) { Array($0) }
+    }
+
+    let physical: Set<UInt32> = [15, 7, 8, 1]
+    let before =
+      message(index: 15, received: 10_000, sent: 5_000)
+      + message(index: 7, received: 20_000, sent: 8_000)
+      + message(index: 36, received: 9_000, sent: 4_000)
+    let after =
+      message(index: 15, received: 94_000, sent: 51_000)
+      + message(index: 7, received: 22_000, sent: 10_000)
+      + message(index: 36, received: 69_000, sent: 30_000)  // VPN
+      + message(index: 16, received: 13_000, sent: 0)  // AWDL
+      + message(index: 13, received: 84_000, sent: 46_000)  // Bridge
+      + message(index: 8, received: 999_000, sent: 999_000, flags: 0)  // Down
+      + message(index: 1, received: 999_000, sent: 999_000, flags: IFF_UP | IFF_LOOPBACK)
+    let previous = try #require(
+      NetworkService.parseInterfaceCounters(before, physicalInterfaceIndices: physical))
+    let current = try #require(
+      NetworkService.parseInterfaceCounters(after, physicalInterfaceIndices: physical))
+
+    #expect(Set(current.keys) == [15, 7])
+    let reading = NetworkService.makeReading(
+      previous: previous, current: current, elapsedSeconds: 2)
+    #expect(reading?.downloadBytesPerSecond == 43_000)
+    #expect(reading?.uploadBytesPerSecond == 24_000)
+    #expect(NetworkService.parseInterfaceCounters(after, physicalInterfaceIndices: []) == [:])
+  }
+
+  @Test("Network interface changes establish fresh baselines and reject malformed routing data")
+  func physicalNetworkChanges() {
+    let wifi: NetworkCounterSnapshot = [
+      15: NetworkInterfaceCounters(receivedBytes: 100, sentBytes: 50)
+    ]
+    let ethernet: NetworkCounterSnapshot = [
+      7: NetworkInterfaceCounters(receivedBytes: 9_000, sentBytes: 8_000)
+    ]
+    let switched = NetworkService.makeReading(previous: wifi, current: ethernet, elapsedSeconds: 2)
+    #expect(switched?.downloadBytesPerSecond == 0)
+    #expect(switched?.uploadBytesPerSecond == 0)
+    let offline = NetworkService.makeReading(previous: wifi, current: [:], elapsedSeconds: 2)
+    #expect(offline?.downloadBytesPerSecond == 0)
+    #expect(offline?.uploadBytesPerSecond == 0)
+    #expect(NetworkService.parseInterfaceCounters([0], physicalInterfaceIndices: [15]) == nil)
+    #expect(
+      NetworkService.parseInterfaceCounters([0, 0, 0, 0], physicalInterfaceIndices: [15]) == nil)
+    #expect(
+      NetworkService.parseInterfaceCounters([255, 255, 0, 0], physicalInterfaceIndices: [15]) == nil
+    )
+    #expect(
+      NetworkService.parseInterfaceCounters(
+        [4, 0, UInt8(RTM_VERSION), UInt8(RTM_IFINFO2)], physicalInterfaceIndices: [15]) == nil)
   }
 
   @Test("Network rates handle new, removed, and reset interfaces")

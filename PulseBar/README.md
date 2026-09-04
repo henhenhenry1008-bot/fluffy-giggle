@@ -12,6 +12,15 @@ The data flow is:
 Monitoring services -> SystemMonitorViewModel -> SystemSnapshot -> SwiftUI
 ```
 
+Network rates now sum active physical interfaces identified by the public
+SystemConfiguration API, instead of adding every non-loopback interface. VPN,
+bridge/VLAN/bond layers and Apple peer-to-peer interfaces are not added again.
+This is physical-interface traffic, including LAN traffic and protocol overhead,
+not an Internet-only speed test. Capacity and byte-rate displays use decimal
+KB/MB/GB/TB; the explicit bits-per-second preference is unchanged. See
+[NETWORK_SCOPE_REVIEW.md](NETWORK_SCOPE_REVIEW.md) for regression coverage and
+live comparison results.
+
 Experimental GPU monitoring identifies devices with Metal and reads each device's undocumented IOKit `PerformanceStatistics` / `Device Utilization %` field. Each GPU gets its own usage value and history; missing or malformed values are unavailable. The backend remains read-only and sandboxed, but driver compatibility is not guaranteed across macOS updates. See `PHASE_21_GPU.md` for verified system versions, limitations, and the update recheck checklist.
 
 Automatic sampling keeps total CPU, per-core CPU, GPU, memory, network, and disk-throughput readings at the selected refresh interval. Disk capacity is refreshed at most every 30 seconds and battery state every 5 seconds, while a manual refresh updates every metric. Static memory configuration is cached after its first successful read, history storage remains bounded, and automatic samples publish one consolidated snapshot update to SwiftUI.

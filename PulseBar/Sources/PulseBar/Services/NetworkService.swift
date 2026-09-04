@@ -1,4 +1,6 @@
 import Darwin
+import Foundation
+import SystemConfiguration
 
 struct NetworkInterfaceCounters: Equatable, Sendable {
   let receivedBytes: UInt64
@@ -79,7 +81,58 @@ actor NetworkService: NetworkProviding {
   }
 
   private static func readInterfaceCounters() -> NetworkCounterSnapshot? {
+    guard let physicalInterfaces = physicalInterfaceIndices() else { return nil }
     guard let routingData = readRoutingData() else { return nil }
+
+    return parseInterfaceCounters(routingData, physicalInterfaceIndices: physicalInterfaces)
+  }
+
+  // Use system-reported interface types, not a fixed en0 or an en* prefix:
+  // Wi-Fi and external Ethernet adapters can have different BSD names.
+  static func isPhysicalInterface(name: String?, type: String?, isLayered: Bool) -> Bool {
+    guard let name, !name.isEmpty, let type, !isLayered else { return false }
+
+    // These auxiliary Wi-Fi interfaces must not be added to the main radio's
+    // counters, even if a future OS exposes them as a Wi-Fi/Ethernet type.
+    guard !["awdl", "llw", "ap"].contains(where: { name.hasPrefix($0) }) else {
+      return false
+    }
+
+    return [
+      kSCNetworkInterfaceTypeEthernet as String,
+      kSCNetworkInterfaceTypeIEEE80211 as String,
+      kSCNetworkInterfaceTypeWWAN as String,
+      kSCNetworkInterfaceTypeBluetooth as String,
+      kSCNetworkInterfaceTypeFireWire as String,
+    ].contains(type)
+  }
+
+  private static func physicalInterfaceIndices() -> Set<UInt32>? {
+    guard let interfaces = SCNetworkInterfaceCopyAll() as? [SCNetworkInterface] else {
+      return nil
+    }
+
+    var indices: Set<UInt32> = []
+    for interface in interfaces {
+      let name = SCNetworkInterfaceGetBSDName(interface) as String?
+      guard
+        isPhysicalInterface(
+          name: name,
+          type: SCNetworkInterfaceGetInterfaceType(interface) as String?,
+          isLayered: SCNetworkInterfaceGetInterface(interface) != nil
+        ), let name
+      else { continue }
+
+      let index = name.withCString { if_nametoindex($0) }
+      if index != 0 { indices.insert(index) }
+    }
+    return indices
+  }
+
+  static func parseInterfaceCounters(
+    _ routingData: [UInt8],
+    physicalInterfaceIndices: Set<UInt32>
+  ) -> NetworkCounterSnapshot? {
 
     var counters: NetworkCounterSnapshot = [:]
     let parsedSuccessfully = routingData.withUnsafeBytes { rawBuffer in
@@ -110,9 +163,11 @@ actor NetworkService: NetworkProviding {
           )
           let flags = header.ifm_flags
 
-          // NET_RT_IFLIST2 supplies 64-bit byte counters. Only active,
-          // non-loopback interfaces participate in the aggregate rate.
-          if flags & IFF_UP != 0, flags & IFF_LOOPBACK == 0 {
+          // Sum physical links once. Adding a VPN/bridge/VLAN and its underlying
+          // physical interface would count the same traffic at multiple layers.
+          if physicalInterfaceIndices.contains(UInt32(header.ifm_index)),
+            flags & IFF_UP != 0, flags & IFF_LOOPBACK == 0
+          {
             counters[UInt32(header.ifm_index)] = NetworkInterfaceCounters(
               receivedBytes: header.ifm_data.ifi_ibytes,
               sentBytes: header.ifm_data.ifi_obytes

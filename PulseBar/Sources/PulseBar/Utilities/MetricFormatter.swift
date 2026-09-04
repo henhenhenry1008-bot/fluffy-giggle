@@ -32,11 +32,8 @@ enum MetricFormatter {
     }
 
     switch unit {
-    case .automatic:
+    case .automatic, .bytesPerSecond:
       return "\(scaledBytes(bytesPerSecond))/s"
-    case .bytesPerSecond:
-      return
-        "\(scaledValue(bytesPerSecond, divisor: 1_000, units: ["B", "KB", "MB", "GB", "TB"], separator: " "))/s"
     case .bitsPerSecond:
       guard let bitsPerSecond = bitsPerSecond(from: bytesPerSecond) else {
         return "Unavailable"
@@ -55,14 +52,7 @@ enum MetricFormatter {
     }
 
     switch unit {
-    case .automatic:
-      return scaledValue(
-        bytesPerSecond,
-        divisor: 1_024,
-        units: ["B", "K", "M", "G", "T"],
-        separator: ""
-      )
-    case .bytesPerSecond:
+    case .automatic, .bytesPerSecond:
       return scaledValue(
         bytesPerSecond,
         divisor: 1_000,
@@ -104,10 +94,11 @@ enum MetricFormatter {
   }
 
   private static func scaledBytes(_ bytes: Double) -> String {
+    // Decimal unit labels must use decimal scaling in both capacity and rate displays.
     scaledValue(
       bytes,
-      divisor: 1_024,
-      units: ["B", "KiB", "MiB", "GiB", "TiB"],
+      divisor: 1_000,
+      units: ["B", "KB", "MB", "GB", "TB"],
       separator: " "
     )
   }
