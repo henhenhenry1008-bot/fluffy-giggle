@@ -148,6 +148,76 @@ struct PulseBarTests {
     #expect(chart.secondaryPoints.allSatisfy { $0.seriesName == "Upload" })
   }
 
+  @Test("Sparkline projection preserves time spacing, scales, and extreme finite values")
+  func sparklineProjection() {
+    func point(_ time: Double, _ value: Double) -> MetricChartPoint {
+      MetricChartPoint(
+        id: UUID(), timestamp: Date(timeIntervalSinceReferenceDate: time),
+        value: value, seriesName: "Test")
+    }
+    let points = [point(10, 0), point(11, 0.5), point(14, 1)]
+    #expect(MetricChart.timeDomain(points) == 10...14)
+    #expect(MetricChart.timeDomain([]) == nil)
+    #expect(MetricChart.timeDomain([points[0]]) == nil)
+    #expect(
+      SparklineGeometry.projectedPoints(
+        points, size: CGSize(width: 100, height: 20),
+        timeDomain: 10...14, valueDomain: 0...1) == [
+          CGPoint(x: 0, y: 20), CGPoint(x: 25, y: 10), CGPoint(x: 100, y: 0),
+        ])
+    #expect(
+      SparklineGeometry.projectedPoints(
+        points, size: .zero,
+        timeDomain: 10...14, valueDomain: 0...1
+      ).isEmpty)
+    #expect(
+      SparklineGeometry.projectedPoints(
+        points, size: CGSize(width: 100, height: 20),
+        timeDomain: 10...10, valueDomain: 0...1
+      ).isEmpty)
+    #expect(
+      SparklineGeometry.projectedPoints(
+        points, size: CGSize(width: 100, height: 20),
+        timeDomain: 10...14, valueDomain: 0...0
+      ).isEmpty)
+    let extreme = SparklineGeometry.projectedPoints(
+      [point(10, .greatestFiniteMagnitude)],
+      size: CGSize(width: 100, height: 20), timeDomain: 10...14,
+      valueDomain: 0...Double.greatestFiniteMagnitude)
+    #expect(extreme == [CGPoint(x: 0, y: 0)])
+  }
+
+  @Test("Smooth sparklines pass through samples without creating false peaks")
+  func sparklineInterpolation() {
+    let points = [
+      CGPoint(x: 0, y: 20), CGPoint(x: 1, y: 0), CGPoint(x: 3, y: 10),
+      CGPoint(x: 4, y: 10), CGPoint(x: 8, y: 2),
+    ]
+    let segments = SparklineGeometry.segments(points)
+    #expect(segments.count == points.count - 1)
+    for (index, segment) in segments.enumerated() {
+      #expect(segment.start == points[index])
+      #expect(segment.end == points[index + 1])
+      let range = min(segment.start.y, segment.end.y)...max(segment.start.y, segment.end.y)
+      #expect(range.contains(segment.control1.y))
+      #expect(range.contains(segment.control2.y))
+      for step in 0...10 {
+        let t = Double(step) / 10
+        let s = 1 - t
+        let y =
+          s * s * s * segment.start.y + 3 * s * s * t * segment.control1.y
+          + 3 * s * t * t * segment.control2.y + t * t * t * segment.end.y
+        #expect(y >= range.lowerBound - 0.000001 && y <= range.upperBound + 0.000001)
+      }
+    }
+    #expect(SparklineGeometry.segments([]).isEmpty)
+    #expect(SparklineGeometry.segments([.zero]).isEmpty)
+    #expect(SparklineGeometry.segments([.zero, .zero]).isEmpty)
+    #expect(SparklineGeometry.segments([CGPoint(x: 2, y: 1), .zero]).isEmpty)
+    #expect(SparklineGeometry.segments([.zero, CGPoint(x: Double.infinity, y: 0)]).isEmpty)
+    #expect(SparklineGeometry.segments([.zero, .zero, CGPoint(x: 1, y: 2)]).count == 1)
+  }
+
   @Test("Menu bar redraw equality ignores hidden readings but respects visible values and units")
   @MainActor
   func menuBarRedrawEquality() {
