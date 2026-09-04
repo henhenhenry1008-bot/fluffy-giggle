@@ -51,18 +51,13 @@ struct MenuBarPresentationView: View, Equatable {
   let presentation: MenuBarPresentation
 
   var body: some View {
-    HStack(spacing: 8) {
-      if presentation.metrics.isEmpty {
-        Text("PulseBar")
-      } else {
-        ForEach(presentation.metrics) { metric in
-          MenuBarMetricView(presentation: metric)
-        }
-      }
-    }
-    .fixedSize()
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel(presentation.accessibilityLabel)
+    // MenuBarExtra extracts a single native title; sibling Text views in an
+    // HStack are not rendered together. Keep every selected metric in one Text.
+    Text(presentation.title)
+      .lineLimit(1)
+      .fixedSize(horizontal: true, vertical: false)
+      .monospacedDigit()
+      .accessibilityLabel(presentation.accessibilityLabel)
   }
 
   nonisolated static func == (lhs: Self, rhs: Self) -> Bool {

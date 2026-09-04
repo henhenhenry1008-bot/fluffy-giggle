@@ -13,6 +13,10 @@ struct PulseBarApp: App {
   @AppStorage(AppPreferenceKey.appearance) private var appearanceValue =
     AppearancePreference.system.rawValue
 
+  // A window-based app needs the binding-based MenuBarExtra initializer.
+  // Start each launch inserted instead of persisting an accidentally hidden item.
+  @State private var isMenuBarInserted = true
+
   var body: some Scene {
     Window("PulseBar", id: "dashboard") {
       DashboardView(viewModel: monitor, showsOpenWindowButton: false, compact: true)
@@ -25,7 +29,7 @@ struct PulseBarApp: App {
     .defaultPosition(.center)
     .windowResizability(.contentSize)
 
-    MenuBarExtra {
+    MenuBarExtra(isInserted: $isMenuBarInserted) {
       DashboardView(viewModel: monitor, compact: true)
         .preferredColorScheme(appearancePreference.colorScheme)
     } label: {

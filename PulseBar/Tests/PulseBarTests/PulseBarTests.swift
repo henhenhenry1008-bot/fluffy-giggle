@@ -252,6 +252,30 @@ struct PulseBarTests {
     }
   }
 
+  @Test("Menu bar title preserves every selection combination and never becomes empty")
+  func menuBarAllSelectionCombinations() {
+    let expectedTitles = ["CPU 23%", "MEM 51%", "↓ 2.5MB", "↑ 820KB", "BAT 83%"]
+    for mask in 0..<32 {
+      let enabled = (0..<5).map { mask & (1 << $0) != 0 }
+      let visibility = MenuBarMetricVisibility(
+        showsCPU: enabled[0], showsMemory: enabled[1], showsNetworkDownload: enabled[2],
+        showsNetworkUpload: enabled[3], showsBattery: enabled[4])
+      let presentation = MenuBarPresentation(
+        cpuUsage: 0.23, memoryUsage: 0.51, downloadBytesPerSecond: 2_500_000,
+        uploadBytesPerSecond: 820_000, batteryPercentage: 0.83, visibility: visibility)
+      let selected = expectedTitles.indices.filter { enabled[$0] }.map { expectedTitles[$0] }
+      #expect(
+        presentation.title == (selected.isEmpty ? "PulseBar" : selected.joined(separator: "  ")))
+      #expect(presentation.metrics.count == selected.count)
+      #expect(!presentation.title.isEmpty)
+
+      let unavailable = MenuBarPresentation(
+        cpuUsage: nil, memoryUsage: nil, downloadBytesPerSecond: nil, visibility: visibility)
+      #expect(!unavailable.title.isEmpty)
+      #expect(unavailable.metrics.count == selected.count)
+    }
+  }
+
   @Test("View model combines provider readings into one snapshot")
   @MainActor
   func snapshotCoordination() async {
