@@ -10,7 +10,7 @@ struct SummaryMetricCard<ChartContent: View>: View {
   @ViewBuilder let chart: () -> ChartContent
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: 6) {
       HStack(spacing: 6) {
         Image(systemName: systemImage)
           .foregroundStyle(tint)
@@ -40,17 +40,34 @@ struct SummaryMetricCard<ChartContent: View>: View {
 
       Spacer(minLength: 0)
       chart()
-        .frame(height: 32)
+        .frame(height: 26)
     }
     .padding(12)
     .frame(maxWidth: .infinity)
-    .frame(height: 156)
+    .frame(height: 144)
     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     .overlay {
       RoundedRectangle(cornerRadius: 14, style: .continuous)
         .strokeBorder(.primary.opacity(0.1))
     }
     .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+  }
+}
+
+/// A full-width summary for paired values or hardware-specific rows.
+struct SummaryStrip<Content: View>: View {
+  @ViewBuilder let content: () -> Content
+
+  var body: some View {
+    content()
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(12)
+      .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .overlay {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+          .strokeBorder(.primary.opacity(0.1))
+      }
+      .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
   }
 }
 

@@ -86,84 +86,48 @@ struct DashboardView: View {
       }
       .frame(height: 326)
     } else {
-      LazyVGrid(columns: columns, spacing: 10) {
-        summaryButton(.cpu) {
-          SummaryMetricCard(
-            title: "CPU", systemImage: "cpu", tint: .blue,
-            value: MetricFormatter.percentage(viewModel.snapshot.cpuUsage),
-            detail: "Processor usage"
-          ) {
-            MetricChart(
-              samples: viewModel.history,
-              primarySeries: MetricChartSeries(name: "CPU", color: .blue) { $0.cpuUsage },
-              fixedYDomain: 0...1, accessibilityLabel: "CPU usage history"
-            )
-          }
-        }
-        summaryButton(.memory) {
-          SummaryMetricCard(
-            title: "Memory", systemImage: "memorychip", tint: .green,
-            value: MetricFormatter.percentage(memoryUsage),
-            detail: memoryCapacitySummary
-          ) {
-            MetricChart(
-              samples: viewModel.history,
-              primarySeries: MetricChartSeries(name: "Memory", color: .green) {
-                Self.memoryUsage(for: $0)
-              },
-              fixedYDomain: 0...1, accessibilityLabel: "Memory usage history"
-            )
-          }
-        }
-        summaryButton(.disk) {
-          SummaryMetricCard(
-            title: "Disk", systemImage: "internaldrive", tint: .orange,
-            value: MetricFormatter.percentage(diskUsage),
-            detail: diskAvailabilitySummary
-          ) {
-            VStack(alignment: .leading, spacing: 5) {
-              ProgressView(value: diskUsage ?? 0, total: 1)
-                .tint(.orange)
-                .accessibilityHidden(true)
-              Text("Storage used")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+      ScrollView {
+        VStack(spacing: 10) {
+          HStack(spacing: 10) {
+            summaryButton(.cpu) {
+              SummaryMetricCard(
+                title: "CPU", systemImage: "cpu", tint: .blue,
+                value: MetricFormatter.percentage(viewModel.snapshot.cpuUsage),
+                detail: "Processor usage"
+              ) {
+                MetricChart(
+                  samples: viewModel.history,
+                  primarySeries: MetricChartSeries(name: "CPU", color: .blue) { $0.cpuUsage },
+                  fixedYDomain: 0...1, accessibilityLabel: "CPU usage history"
+                )
+              }
+            }
+            summaryButton(.memory) {
+              SummaryMetricCard(
+                title: "Memory", systemImage: "memorychip", tint: .green,
+                value: MetricFormatter.percentage(memoryUsage),
+                detail: memoryCapacitySummary
+              ) {
+                MetricChart(
+                  samples: viewModel.history,
+                  primarySeries: MetricChartSeries(name: "Memory", color: .green) {
+                    Self.memoryUsage(for: $0)
+                  },
+                  fixedYDomain: 0...1, accessibilityLabel: "Memory usage history"
+                )
+              }
             }
           }
-        }
-        summaryButton(.network) {
-          SummaryMetricCard(
-            title: "Network", systemImage: "network", tint: .cyan,
-            value:
-              "↓ \(MetricFormatter.rate(viewModel.snapshot.networkDownloadBytesPerSecond, unit: networkDisplayUnit))",
-            detail:
-              "↑ \(MetricFormatter.rate(viewModel.snapshot.networkUploadBytesPerSecond, unit: networkDisplayUnit))"
-          ) {
-            MetricChart(
-              samples: viewModel.history,
-              primarySeries: MetricChartSeries(name: "Download", color: .cyan) {
-                $0.networkDownloadBytesPerSecond
-              },
-              secondarySeries: MetricChartSeries(name: "Upload", color: .orange) {
-                $0.networkUploadBytesPerSecond
-              },
-              accessibilityLabel: "Download (cyan) and upload (orange) history"
-            )
-          }
-          .help(
-            "↓ Download · ↑ Upload. Physical interfaces only; includes local-network traffic. Click for details."
-          )
+          gpuSummaries
+          networkSummary
+          diskSummary
         }
       }
+      .frame(height: 460)
 
       HStack(spacing: 12) {
-        Button {
-          selectedMetric = .gpu
-        } label: {
-          Label("GPU details", systemImage: "display")
-        }
-        .help("Experimental, driver-reported GPU measurements")
-
+        Text("Click a card for details")
+          .font(.caption)
         Spacer(minLength: 0)
 
         if viewModel.snapshot.batteryPercentage != nil {
@@ -187,6 +151,148 @@ struct DashboardView: View {
       .padding(.horizontal, 4)
       .padding(.vertical, 6)
     }
+  }
+
+  @ViewBuilder
+  private var gpuSummaries: some View {
+    // Keep each GPU's identity and history; do not invent a combined percentage.
+    if viewModel.snapshot.gpuDevices.isEmpty {
+      summaryButton(.gpu) {
+        SummaryStrip {
+          HStack {
+            Label("GPU", systemImage: "display")
+              .foregroundStyle(.purple)
+            Spacer()
+            Text("Unavailable")
+              .foregroundStyle(.secondary)
+            detailChevron
+          }
+          .font(.subheadline)
+        }
+      }
+    } else {
+      ForEach(viewModel.snapshot.gpuDevices) { gpu in
+        summaryButton(.gpu) {
+          SummaryStrip {
+            HStack(spacing: 10) {
+              Image(systemName: "display")
+                .foregroundStyle(.purple)
+              VStack(alignment: .leading, spacing: 3) {
+                Text(gpu.name)
+                  .font(.subheadline.weight(.semibold))
+                  .lineLimit(1)
+                  .help(gpu.name)
+                Text("GPU · Experimental")
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+              }
+              .frame(maxWidth: .infinity, alignment: .leading)
+              MetricChart(
+                samples: viewModel.history,
+                primarySeries: MetricChartSeries(name: "GPU", color: .purple) {
+                  $0.gpuUsage(for: gpu.id)
+                },
+                fixedYDomain: 0...1, accessibilityLabel: "\(gpu.name) GPU usage history"
+              )
+              .frame(width: 56, height: 28)
+              Text(MetricFormatter.percentage(gpu.usage))
+                .font(.title3.weight(.semibold))
+                .monospacedDigit()
+                .fixedSize()
+              detailChevron
+            }
+          }
+        }
+        .help("\(gpu.name). Experimental, driver-reported measurements. Click for details.")
+      }
+    }
+  }
+
+  private var networkSummary: some View {
+    summaryButton(.network) {
+      SummaryStrip {
+        VStack(alignment: .leading, spacing: 8) {
+          HStack {
+            Label("Network", systemImage: "network")
+              .font(.subheadline.weight(.semibold))
+            Spacer()
+            detailChevron
+          }
+          HStack(spacing: 12) {
+            summaryRate(
+              "Download", symbol: "arrow.down", tint: .cyan,
+              value: viewModel.snapshot.networkDownloadBytesPerSecond
+            )
+            summaryRate(
+              "Upload", symbol: "arrow.up", tint: .orange,
+              value: viewModel.snapshot.networkUploadBytesPerSecond
+            )
+          }
+          MetricChart(
+            samples: viewModel.history,
+            primarySeries: MetricChartSeries(name: "Download", color: .cyan) {
+              $0.networkDownloadBytesPerSecond
+            },
+            secondarySeries: MetricChartSeries(name: "Upload", color: .orange) {
+              $0.networkUploadBytesPerSecond
+            },
+            accessibilityLabel: "Download (cyan) and upload (orange) history"
+          )
+          .frame(height: 32)
+        }
+      }
+    }
+    .help("Physical network interfaces only; includes local-network traffic. Click for details.")
+  }
+
+  private func summaryRate(_ title: String, symbol: String, tint: Color, value: Double?)
+    -> some View
+  {
+    VStack(alignment: .leading, spacing: 3) {
+      Label(title, systemImage: symbol)
+        .font(.caption.weight(.medium))
+        .foregroundStyle(tint)
+      Text(MetricFormatter.rate(value, unit: networkDisplayUnit))
+        .font(.system(size: 21, weight: .semibold, design: .rounded))
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private var diskSummary: some View {
+    summaryButton(.disk) {
+      SummaryStrip {
+        VStack(alignment: .leading, spacing: 8) {
+          HStack {
+            Label("Disk", systemImage: "internaldrive")
+              .font(.subheadline.weight(.semibold))
+            Spacer()
+            Text(MetricFormatter.percentage(diskUsage))
+              .font(.title3.weight(.semibold))
+              .monospacedDigit()
+            detailChevron
+          }
+          ProgressView(value: diskUsage ?? 0, total: 1)
+            .tint(.orange)
+            .accessibilityHidden(true)
+          HStack {
+            Text(diskAvailabilitySummary)
+            Spacer(minLength: 4)
+            Text("Storage used")
+          }
+          .font(.caption)
+          .foregroundStyle(.secondary)
+        }
+      }
+    }
+  }
+
+  private var detailChevron: some View {
+    Image(systemName: "chevron.right")
+      .font(.caption2.weight(.semibold))
+      .foregroundStyle(.secondary)
   }
 
   private var diskAvailabilitySummary: String {
