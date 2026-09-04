@@ -1,5 +1,41 @@
 import SwiftUI
 
+/// Color the charge independently from the neutral battery outline.
+struct BatteryLevelIcon: View {
+  let percentage: Double?
+  let isCharging: Bool
+
+  private var fillFraction: Double {
+    guard let percentage, percentage.isFinite else { return 0 }
+    return min(max(percentage, 0), 1)
+  }
+
+  var body: some View {
+    HStack(spacing: 1) {
+      ZStack(alignment: .leading) {
+        RoundedRectangle(cornerRadius: 2)
+          .strokeBorder(.gray, lineWidth: 1)
+        RoundedRectangle(cornerRadius: 1)
+          .fill(.green)
+          .frame(width: 14 * fillFraction, height: 6)
+          .padding(.leading, 2)
+      }
+      .frame(width: 18, height: 10)
+      .overlay {
+        if isCharging {
+          Image(systemName: "bolt.fill")
+            .font(.system(size: 8, weight: .bold))
+            .foregroundStyle(.primary)
+        }
+      }
+      Capsule()
+        .fill(.gray)
+        .frame(width: 2, height: 4)
+    }
+    .accessibilityHidden(true)
+  }
+}
+
 /// A compact, read-only summary inside a button. Expanded readings stay in MetricCard.
 struct SummaryMetricCard<ChartContent: View>: View {
   let title: String

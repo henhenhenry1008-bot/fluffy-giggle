@@ -134,10 +134,16 @@ struct DashboardView: View {
           Button {
             selectedMetric = .battery
           } label: {
-            Label(
-              MetricFormatter.percentage(viewModel.snapshot.batteryPercentage),
-              systemImage: batterySystemImage
-            )
+            Label {
+              Text(MetricFormatter.percentage(viewModel.snapshot.batteryPercentage))
+                .foregroundStyle(.green)
+                .monospacedDigit()
+            } icon: {
+              BatteryLevelIcon(
+                percentage: viewModel.snapshot.batteryPercentage,
+                isCharging: viewModel.snapshot.batteryIsCharging == true
+              )
+            }
           }
           .help("Battery · \(batteryState)")
           .accessibilityLabel(
@@ -266,8 +272,13 @@ struct DashboardView: View {
       SummaryStrip {
         VStack(alignment: .leading, spacing: 8) {
           HStack {
-            Label("Disk", systemImage: "internaldrive")
-              .font(.subheadline.weight(.semibold))
+            Label {
+              Text("Disk")
+            } icon: {
+              Image(systemName: "internaldrive")
+                .foregroundStyle(.pink)
+            }
+            .font(.subheadline.weight(.semibold))
             Spacer()
             Text(MetricFormatter.percentage(diskUsage))
               .font(.title3.weight(.semibold))
@@ -275,7 +286,7 @@ struct DashboardView: View {
             detailChevron
           }
           ProgressView(value: diskUsage ?? 0, total: 1)
-            .tint(.orange)
+            .tint(.pink)
             .accessibilityHidden(true)
           HStack {
             Text(diskAvailabilitySummary)
@@ -538,7 +549,7 @@ struct DashboardView: View {
   }
 
   private var diskCard: some View {
-    MetricCard(title: "Disk", systemImage: "internaldrive", tint: .orange) {
+    MetricCard(title: "Disk", systemImage: "internaldrive", tint: .pink) {
       Text(MetricFormatter.percentage(diskUsage))
         .font(.title2.weight(.semibold))
         .monospacedDigit()
@@ -551,7 +562,7 @@ struct DashboardView: View {
       .lineLimit(1)
 
       ProgressView(value: diskUsage ?? 0, total: 1)
-        .tint(.orange)
+        .tint(.pink)
 
       Text("Available \(MetricFormatter.bytes(viewModel.snapshot.diskAvailable))")
         .font(.caption2)
@@ -562,14 +573,14 @@ struct DashboardView: View {
         symbol: "arrow.down",
         title: "Read",
         value: viewModel.snapshot.diskReadBytesPerSecond,
-        tint: .orange
+        tint: .pink
       )
 
       diskRate(
         symbol: "arrow.up",
         title: "Write",
         value: viewModel.snapshot.diskWriteBytesPerSecond,
-        tint: .blue
+        tint: .pink
       )
     }
   }
@@ -583,6 +594,7 @@ struct DashboardView: View {
       Text(MetricFormatter.percentage(viewModel.snapshot.batteryPercentage))
         .font(.title2.weight(.semibold))
         .monospacedDigit()
+        .foregroundStyle(viewModel.snapshot.batteryPercentage == nil ? Color.secondary : .green)
 
       Text(batteryState)
         .font(.caption)
