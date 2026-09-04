@@ -51,3 +51,32 @@ These short observations are not a guarantee on other hardware or workloads.
 - Runnable checkpoint: `运行版/PerfRound1-20260904/PulseBar.app`.
 - Full-history CPU, PID 26107: **4.449%, 4.298%, 4.248%; mean 4.332%**,
   about 48.6% lower than baseline under the same Debug/1-second conditions.
+
+## Round 2 — lightweight sparkline rendering
+
+- Before changes: reviewed round-1 diff/tests, recorded its CPU results, committed
+  `6b4eb16`, tagged `codex/perf-round-2-before-20260904`, and backed up the complete
+  working native source to `运行版/Performance-round2-before-hlHnZS/`.
+- A new 5-second sample still showed Chart layout work. The graphs intentionally
+  hide axes/legends and have no per-point selection; a full chart layout engine is
+  unnecessary for these compact sparklines.
+- Replace the round-1 chart renderer with [SwiftUI Canvas](https://developer.apple.com/documentation/swiftui/canvas),
+  drawing one path per series. This is supported on the existing macOS 14 target.
+- Keep 1.5pt colored smooth strokes, actual timestamp spacing, all history samples,
+  fixed percentage domains, shared network scale, and existing accessibility labels.
+  Monotone cubic segments pass through the measured points and constrain control
+  points to each segment's vertical range to avoid false peaks. Smoothing is not
+  pixel-identical to Charts' private interpolation implementation.
+- Invalid sizes/domains, duplicate or backward timestamps, nonfinite coordinates
+  and too few points safely produce no invalid path/division. No Timer, Task,
+  polling loop or cache is introduced by the renderer.
+- All sampling services, scheduler, stored preferences, app scenes, and approved
+  dashboard layout/color code remain unchanged.
+- Added projection/interpolation edge tests. SwiftPM: **71 tests passed** including
+  the 3 existing experimental tests. Clean Xcode Debug: **68 tests passed**, with
+  strict concurrency and Swift warnings-as-errors enabled.
+- Runnable: `运行版/PerfRound2-20260904/PulseBar.app`.
+- Full-history CPU, PID 26871: **4.348%, 4.597%, 4.497%; mean 4.481%**.
+  This is not an improvement over round 1's 4.332% and is within short-run noise.
+  **Reject this experiment**: retain a checkpoint but restore the simpler tested
+  round-1 renderer before the next round. The Canvas geometry/tests do not ship.
