@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		200000000000000000000041 /* PulseBar.icns in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000041 /* PulseBar.icns */; };
 		200000000000000000000001 /* PulseBarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000001 /* PulseBarApp.swift */; };
 		200000000000000000000002 /* MonitoringReadings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000002 /* MonitoringReadings.swift */; };
 		200000000000000000000003 /* SystemSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000003 /* SystemSnapshot.swift */; };
@@ -52,6 +53,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		100000000000000000000041 /* PulseBar.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Resources/PulseBar.icns; sourceTree = "<group>"; };
 		100000000000000000000001 /* PulseBarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/PulseBarApp.swift; sourceTree = "<group>"; };
 		100000000000000000000002 /* MonitoringReadings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/MonitoringReadings.swift; sourceTree = "<group>"; };
 		100000000000000000000003 /* SystemSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SystemSnapshot.swift; sourceTree = "<group>"; };
@@ -111,6 +113,7 @@
 		000000000000000000000002 = {
 			isa = PBXGroup;
 			children = (
+				100000000000000000000041 /* PulseBar.icns */,
 				000000000000000000000004 /* Sources */,
 				000000000000000000000005 /* Tests */,
 				000000000000000000000006 /* Config */,
@@ -266,6 +269,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				200000000000000000000041 /* PulseBar.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Darwin
 import Foundation
@@ -8,6 +9,19 @@ import Testing
 
 @Suite("PulseBar monitoring")
 struct PulseBarTests {
+  #if !SWIFT_PACKAGE
+    @Test("Native app declares and bundles a readable multi-resolution icon")
+    @MainActor
+    func bundledApplicationIcon() throws {
+      #expect(Bundle.main.object(forInfoDictionaryKey: "CFBundleIconFile") as? String == "PulseBar.icns")
+      let url = try #require(Bundle.main.url(forResource: "PulseBar", withExtension: "icns"))
+      let icon = try #require(NSImage(contentsOf: url))
+      #expect(icon.isValid)
+      #expect(icon.representations.contains { $0.pixelsWide == 1024 && $0.pixelsHigh == 1024 })
+      #expect(icon.representations.contains { $0.pixelsWide == 16 && $0.pixelsHigh == 16 })
+    }
+  #endif
+
   @Test("Metric formatter presents percentages and byte rates")
   func metricFormatting() {
     #expect(MetricFormatter.percentage(0.32) == "32%")

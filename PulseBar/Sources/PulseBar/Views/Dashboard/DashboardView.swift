@@ -346,11 +346,11 @@ struct DashboardView: View {
 
   private var header: some View {
     HStack(spacing: 10) {
-      Image(systemName: "waveform.path.ecg")
-        .font(.title3.weight(.semibold))
-        .foregroundStyle(.white)
+      Image(nsImage: NSApplication.shared.applicationIconImage)
+        .resizable()
+        .interpolation(.high)
         .frame(width: 34, height: 34)
-        .background(.blue.gradient, in: RoundedRectangle(cornerRadius: 10))
+        .accessibilityHidden(true)
 
       VStack(alignment: .leading, spacing: 1) {
         Text("PulseBar")
